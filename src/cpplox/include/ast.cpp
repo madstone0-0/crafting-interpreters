@@ -1,0 +1,44 @@
+#include "ast.hpp"
+
+namespace lox::ast {
+
+    std::string astPrinter(const ExprPtr& expr) {
+        if (!expr) return "no expression";
+
+        return std::visit(
+            utils::overload{
+                [](const Binary& e) {
+                    return detail::parenthesize(e.op.lexeme, e.left, e.right);
+                },
+                [](const Grouping& e) {
+                    return detail::parenthesize("group", e.expr);
+                },
+                [](const Literal& e) {
+                    return std::visit(LiteralPrinter, e.val);
+                },
+                [](const Unary& e) {
+                    return detail::parenthesize(e.op.lexeme, e.right);
+                }},
+            *expr);
+    }
+
+    std::string rpnAstPrinter(const ExprPtr& expr) {
+        if (!expr) return "no expression";
+
+        return std::visit(
+            utils::overload{
+                [](const Binary& e) {
+                    return rpnAstPrinter(e.left) + " " +
+                           rpnAstPrinter(e.right) + " " + e.op.lexeme;
+                },
+                [](const Grouping& e) { return rpnAstPrinter(e.expr); },
+                [](const Unary& e) {
+                    return rpnAstPrinter(e.right) + " " + e.op.lexeme;
+                },
+                [](const Literal& e) {
+                    return std::visit(LiteralPrinter, e.val);
+                }},
+            *expr);
+    }
+
+}

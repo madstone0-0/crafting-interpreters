@@ -1,0 +1,35 @@
+BasedOnStyle: Google
+BreakBeforeBinaryOperators: false
+IndentWidth: 4
+SortIncludes: CaseInsensitive
+NamespaceIndentation: All
+ColumnLimit: 79
+BraceWrapping:
+  AfterCaseLabel: false
+  AfterClass: false
+  AfterControlStatement: Never
+  AfterEnum: false
+  AfterFunction: true
+  AfterNamespace: false
+  AfterObjCDeclaration: false
+  AfterStruct: false
+  AfterUnion: false
+  AfterExternBlock: false
+  BeforeCatch: true
+  BeforeElse: true
+  IndentBraces: false
+  SplitEmptyFunction: true
+  SplitEmptyRecord: true
+  SplitEmptyNamespace: true
+BreakConstructorInitializers: BeforeComma
+ConstructorInitializerAllOnOneLineOrOnePerLine: false
+ConstructorInitializerIndentWidth: 0
+FixNamespaceComments: false
+KeepEmptyLinesAtTheStartOfBlocks: false
+PenaltyBreakBeforeFirstCallParameter: 25
+PenaltyBreakAssignment: 100
+PointerAlignment: Left
+ReflowComments: true
+SpaceBeforeCpp11BracedList: false
+SpacesBeforeTrailingComments: 2
+# Language: Cpp

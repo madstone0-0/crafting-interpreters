@@ -1,0 +1,32 @@
+Checks: >
+  *, -abseil-*, -altera-*, -android-*, -fuchsia-*, -google-*, -llvm*, -zircon-*, -readability-else-after-return, -readability-static-accessed-through-instance, -readability-avoid-const-params-in-decls, -cppcoreguidelines-non-private-member-variables-in-classes, -misc-non-private-member-variables-in-classes, -readability-braces-around-statements, -hicpp-braces-around-statements, -readability-identifier-length, -cppcoreguidelines-avoid-magic-numbers, -readability-magic-numbers, -modernize-use-trailing-return-type, -cppcoreguidelines-avoid-const-or-ref-data-members, -readability-math-missing-parentheses, -bugprone-easily-swappable-parameters, -misc-no-recursion, -cppcoreguidelines-pro-type-reinterpret-cast, -hicpp-explicit-conversions
+
+WarningsAsErrors: ''
+HeaderFilterRegex: '.*'
+FormatStyle: file
+CheckOptions:
+# Enforce PascalCase naming for all identifiers (except macros)
+- key: readability-identifier-naming.ClassCase
+  value: PascalCase
+- key: readability-identifier-naming.StructCase
+  value: PascalCase
+- key: readability-identifier-naming.EnumCase
+  value: PascalCase
+- key: readability-identifier-naming.FunctionCase
+  value: PascalCase
+- key: readability-identifier-naming.MethodCase
+  value: PascalCase
+- key: readability-identifier-naming.VariableCase
+  value: PascalCase
+- key: readability-identifier-naming.ParameterCase
+  value: PascalCase
+- key: readability-identifier-naming.NamespaceCase
+  value: PascalCase
+# Leave macros in UPPER_CASE
+- key: readability-identifier-naming.MacroDefinitionCase
+  value: UPPER_CASE
+# Optional: Ignore identifier-length warnings for common names
+- key: readability-identifier-length.IgnoredVariableNames
+  value: 'x|y|z'
+- key: readability-identifier-length.IgnoredParameterNames
+  value: 'x|y|z'
