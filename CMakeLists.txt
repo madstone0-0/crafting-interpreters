@@ -56,6 +56,11 @@ pkg_search_module(TBB REQUIRED tbb IMPORTED_TARGET)
 find_package(Catch2 3 REQUIRED)
 
 #################
+# replxx        #
+#################
+find_package(replxx REQUIRED)
+
+#################
 # Boost Library #
 #################
 set(Boost_USE_STATIC_LIBS ON)

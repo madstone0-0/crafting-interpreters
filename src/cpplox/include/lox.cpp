@@ -51,14 +51,32 @@ namespace lox {
     }
 
     void Lox::runPrompt() {
-        while (true) {
-            std::print("> ");
-            std::string line;
-            std::getline(std::cin, line);
-            // Break on exit or CTRL-D
-            if (line == ".exit" || std::cin.eof()) break;
+        replxx::Replxx rx;
+        rx.set_max_history_size(1'000);
 
-            run(line);
+        std::string buf;
+
+        while (true) {
+            const char* prompt = buf.empty() ? "> " : "...";
+            const char* input = rx.input(prompt);
+
+            if (input == nullptr) {
+                if (!buf.empty()) {
+                    std::println();
+                    buf.clear();
+                    continue;
+                }
+                break;
+            }
+
+            std::string line{input};
+            if (buf.empty() && line == ".exit") break;
+
+            buf += line;
+            // buf += '\n';
+            rx.history_add(buf);
+            run(buf);
+            buf.clear();
         }
     }
 

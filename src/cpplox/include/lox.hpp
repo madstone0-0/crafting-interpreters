@@ -1,4 +1,5 @@
 #pragma once
+#include <replxx.hxx>
 #include <format>
 #include <iostream>
 #include <memory>
