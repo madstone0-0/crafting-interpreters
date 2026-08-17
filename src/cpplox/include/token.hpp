@@ -72,18 +72,18 @@ namespace lox::lexer {
     };
 
     using StringLiteral = std::string;
-    using IdentiferLiteral = Identifer;
+    // using IdentiferLiteral = Identifer;
     using NumberLiteral = double;
     using BoolLiteral = bool;
 
-    using LiteralVariant =
-        std::variant<std::monostate, StringLiteral, IdentiferLiteral,
-                     NumberLiteral, BoolLiteral>;
+    using LiteralVariant = std::variant<std::monostate, StringLiteral,
+                                        // IdentiferLiteral,
+                                        NumberLiteral, BoolLiteral>;
     using Literal = LiteralVariant;
 
     inline constexpr auto LiteralVisitor = utils::overload{
         [](const lexer::StringLiteral& e) { return e; },
-        [](const lexer::IdentiferLiteral& e) { return e.name; },
+        // [](const lexer::IdentiferLiteral& e) { return e.name; },
         [](const lexer::NumberLiteral& e) { return std::to_string(e); },
         [](const lexer::BoolLiteral& e) {
             return std::string{e ? "true" : "false"};

@@ -1,13 +1,10 @@
 #include "parser.hpp"
 
-#include "expr.hpp"
-#include "token.hpp"
-
 namespace lox::parser {
 
-    ParseError Parser::error(const lexer::Token& tok, const std::string& msg) {
+    error::ParseError Parser::error(const lexer::Token& tok, const std::string& msg) {
         lox::Lox::error(tok, msg);
-        return ParseError{tok, msg.c_str()};
+        return error::ParseError{tok, msg.c_str()};
     }
 
     bool Parser::isAtEnd() { return peek().type == lexer::TokenType::EOF_; }

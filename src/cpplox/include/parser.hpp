@@ -5,6 +5,7 @@
 #include <utility>
 
 #include "ast.hpp"
+#include "error.hpp"
 #include "expr.hpp"
 #include "lexer.hpp"
 #include "token.hpp"
@@ -12,19 +13,12 @@
 namespace lox::parser {
     using ast::box;
 
-    struct ParseError : public std::runtime_error {
-        lexer::Token tok;
-        ParseError(lexer::Token tok, const char* msg)
-        : std::runtime_error(msg)
-        , tok{std::move(tok)} {}
-    };
-
     class Parser {
        private:
         lexer::Tokens tokens;
         size_t curr{};
 
-        ParseError error(const lexer::Token&, const std::string&);
+        error::ParseError error(const lexer::Token&, const std::string&);
 
         bool isAtEnd();
 
@@ -120,7 +114,7 @@ namespace lox::parser {
         ast::ExprPtr parse() {
             try {
                 return expression();
-            } catch (const ParseError& e) {
+            } catch (const error::ParseError& e) {
                 return nullptr;
             }
         }

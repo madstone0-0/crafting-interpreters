@@ -6,6 +6,8 @@
 
 namespace lox {
     bool Lox::hadError = false;
+    bool Lox::hadRuntimeError = false;
+    const interpreter::Interpreter Lox::interpreter{};
 
     Lox& Lox::Ins() {
         static Lox instance;
@@ -14,7 +16,7 @@ namespace lox {
 
     void Lox::report(size_t line, std::string_view where,
                      std::string_view msg) {
-        std::println("[line {}] Error {}: {}", line, where, msg);
+        std::println(std::cerr, "[line {}] Error {}: {}", line, where, msg);
         hadError = true;
     }
 
@@ -30,24 +32,37 @@ namespace lox {
         }
     }
 
+    void Lox::runtimeError(const lox::error::RuntimeError& e) {
+        std::println(std::cerr, "{}\n [line {}]", e.what(), e.token.line);
+        hadRuntimeError = true;
+    }
+
     void Lox::run(std::string_view in) {
         lexer::Lexer lexer{in};
         auto tokens = lexer.scanTokens();
         parser::Parser parser{tokens};
         auto expr = parser.parse();
 
+        if (hadRuntimeError) {
+            hadRuntimeError = false;
+        }
+
         if (hadError) {
             hadError = false;
             return;
         }
 
-        std::println("{}", ast::astPrinter(expr));
+        interpreter.interpret(expr);
     }
 
-    void Lox::runFile(std::string_view path) {
+    int Lox::runFile(std::string_view path) {
         auto file = lox::utils::open(path);
         auto ss = std::stringstream{} << file.rdbuf();
         run(ss.str());
+
+        if (hadError) return 65;
+        if (hadRuntimeError) return 70;
+        return 0;
     }
 
     void Lox::runPrompt() {
@@ -73,7 +88,6 @@ namespace lox {
             if (buf.empty() && line == ".exit") break;
 
             buf += line;
-            // buf += '\n';
             rx.history_add(buf);
             run(buf);
             buf.clear();

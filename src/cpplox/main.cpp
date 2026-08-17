@@ -50,8 +50,7 @@ int main(int argc, char* argv[]) {
             lox::Lox::runPrompt();
         } else {
             auto file = vm["script"].as<std::string>();
-            lox::Lox::runFile(file);
-            if (lox::Lox::hadError) return 65;
+            return lox::Lox::runFile(file);
         }
     } catch (const std::exception& e) {
         std::println(std::cerr, "Error running -> {}", e.what());
