@@ -16,6 +16,19 @@ namespace lox::ast {
         ExprPtr right;
     };
 
+    struct Unary {
+        lox::lexer::Token op;
+        ExprPtr right;
+    };
+
+    struct Ternary {
+        ExprPtr left;
+        lox::lexer::Token op1;
+        ExprPtr mid;
+        lox::lexer::Token op2;
+        ExprPtr right;
+    };
+
     struct Grouping {
         ExprPtr expr;
     };
@@ -24,12 +37,8 @@ namespace lox::ast {
         lox::lexer::Literal val;
     };
 
-    struct Unary {
-        lox::lexer::Token op;
-        ExprPtr right;
-    };
-
-    using ExprVariant = std::variant<Binary, Grouping, Literal, Unary>;
+    using ExprVariant =
+        std::variant<Binary, Unary, Ternary, Grouping, Literal>;
     struct Expr : ExprVariant {
         using ExprVariant::ExprVariant;
     };

@@ -10,6 +10,10 @@ namespace lox::ast {
                 [](const Binary& e) {
                     return detail::parenthesize(e.op.lexeme, e.left, e.right);
                 },
+                [](const Ternary& e) {
+                    return detail::parenthesize(e.op1.lexeme + e.op2.lexeme,
+                                                e.left, e.mid, e.right);
+                },
                 [](const Grouping& e) {
                     return detail::parenthesize("group", e.expr);
                 },
@@ -31,10 +35,15 @@ namespace lox::ast {
                     return rpnAstPrinter(e.left) + " " +
                            rpnAstPrinter(e.right) + " " + e.op.lexeme;
                 },
-                [](const Grouping& e) { return rpnAstPrinter(e.expr); },
+                [](const Ternary& e) {
+                    return rpnAstPrinter(e.left) + " " + rpnAstPrinter(e.mid) +
+                           " " + rpnAstPrinter(e.right) + " " + e.op1.lexeme +
+                           e.op2.lexeme;
+                },
                 [](const Unary& e) {
                     return rpnAstPrinter(e.right) + " " + e.op.lexeme;
                 },
+                [](const Grouping& e) { return rpnAstPrinter(e.expr); },
                 [](const Literal& e) {
                     return std::visit(LiteralPrinter, e.val);
                 }},

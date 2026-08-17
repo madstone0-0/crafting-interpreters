@@ -1,5 +1,8 @@
 #include "parser.hpp"
 
+#include "expr.hpp"
+#include "token.hpp"
+
 namespace lox::parser {
 
     ParseError Parser::error(const lexer::Token& tok, const std::string& msg) {
@@ -56,7 +59,45 @@ namespace lox::parser {
         throw error(peek(), msg);
     }
 
-    ast::ExprPtr Parser::expression() { return equality(); }
+    ast::ExprPtr Parser::expression() { return comma(); }
+
+    ast::ExprPtr Parser::comma() {
+        using enum lexer::TokenType;
+        auto expr = ternary();
+
+        while (match(COMMA)) {
+            auto op = prev();
+            auto right = ternary();
+            expr = box(ast::Binary{
+                .left = std::move(expr),
+                .op = op,
+                .right = std::move(right),
+            });
+        }
+
+        return expr;
+    }
+
+    ast::ExprPtr Parser::ternary() {
+        using enum lexer::TokenType;
+        auto expr = equality();
+
+        if (match(QUESTION_MARK)) {
+            auto op1 = prev();
+            auto mid = expression();
+            auto op2 = consume(COLON, "Expect ':' after expression.");
+            auto right = ternary();
+            expr = box(ast::Ternary{
+                .left = std::move(expr),
+                .op1 = op1,
+                .mid = std::move(mid),
+                .op2 = op2,
+                .right = std::move(right),
+            });
+        }
+
+        return expr;
+    }
 
     ast::ExprPtr Parser::equality() {
         using enum lexer::TokenType;

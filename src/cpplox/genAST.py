@@ -70,9 +70,10 @@ if __name__ == "__main__":
             "Expr",
             [
                 "Binary : Expr left, lox::lexer::Token op, Expr right",
+                "Unary : lox::lexer::Token op, Expr right",
+                "Ternary : Expr left, lox::lexer::Token op1, Expr mid, lox::lexer::Token op2, Expr right",
                 "Grouping : Expr expr",
                 "Literal : lox::lexer::Literal val",
-                "Unary : lox::lexer::Token op, Expr right",
             ],
         )
     except Exception as e:

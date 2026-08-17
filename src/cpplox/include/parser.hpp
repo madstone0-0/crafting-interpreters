@@ -71,9 +71,16 @@ namespace lox::parser {
         }
 
         /**
-         * @brief expression -> equality
+         * @brief expression -> comma
          */
         ast::ExprPtr expression();
+
+        /**
+         * @brief comma -> "(" equality ( ","  equality )* ")" ;
+         */
+        ast::ExprPtr comma();
+
+        ast::ExprPtr ternary();
 
         /**
          * @brief equality -> comparison ( ( "==" | "!=" ) comparison )* ;
