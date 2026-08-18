@@ -50,7 +50,7 @@ inline {base}Ptr box({base} e) {{
     return std::make_unique<{base}>(std::move(e));
 }}
 
-}} // namespace lox::parsing
+}} // namespace lox::ast
 """)
     # Run clang-format on the file
     proc = Popen(["clang-format", "-i", str(headerPath)], stdout=PIPE, stderr=PIPE)

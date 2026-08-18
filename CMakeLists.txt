@@ -27,6 +27,11 @@ if(HAS_PATTERN_MATCHING)
     add_compile_options(-fpattern-matching)
 endif()
 
+check_cxx_compiler_flag("-fexpansion-statements" HAS_EXPANSION)
+if(HAS_EXPANSION)
+    add_compile_options(-fexpansion-statements)
+endif()
+
 check_cxx_compiler_flag("-freflection" HAS_REFLECTION)
 if(HAS_REFLECTION)
     add_compile_options(-freflection)

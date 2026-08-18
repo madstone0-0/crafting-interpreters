@@ -33,7 +33,7 @@ namespace lox {
     }
 
     void Lox::runtimeError(const lox::error::RuntimeError& e) {
-        std::println(std::cerr, "{}\n [line {}]", e.what(), e.token.line);
+        std::println(std::cerr, "{}\n[line {}]", e.what(), e.token.line);
         hadRuntimeError = true;
     }
 

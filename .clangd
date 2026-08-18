@@ -1,2 +1,2 @@
 CompileFlags:
-  Remove: [-freflection, -fpattern-matching]
+  Add: [-freflection, -fexpansion-statements]

@@ -47,4 +47,4 @@ namespace lox::ast {
     // expr literal (or another ExprPtr child) into a Binary/Unary/etc field.
     inline ExprPtr box(Expr e) { return std::make_unique<Expr>(std::move(e)); }
 
-}  // namespace lox::parsing
+}  // namespace lox::ast

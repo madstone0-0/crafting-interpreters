@@ -70,10 +70,13 @@ namespace lox::parser {
         ast::ExprPtr expression();
 
         /**
-         * @brief comma -> "(" equality ( ","  equality )* ")" ;
+         * @brief comma -> ternary ( ","  ternary )*  ;
          */
         ast::ExprPtr comma();
 
+        /**
+         * @brief ternary -> equality ( "?" expression ":" ternary )? ;
+         */
         ast::ExprPtr ternary();
 
         /**

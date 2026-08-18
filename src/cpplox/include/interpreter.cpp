@@ -1,5 +1,9 @@
 #include "interpreter.hpp"
 
+#include <variant>
+
+#include "token.hpp"
+
 namespace lox::interpreter {
 
     bool Interpreter::isTruthy(const lexer::Literal& l) const {
@@ -63,6 +67,10 @@ namespace lox::interpreter {
                     return std::get<lexer::StringLiteral>(left) +
                            std::get<lexer::StringLiteral>(right);
                 }
+                if (std::holds_alternative<lexer::StringLiteral>(left)) {
+                    auto rightStr = std::visit(lexer::LiteralVisitor, right);
+                    return std::get<lexer::StringLiteral>(left) + rightStr;
+                }
                 throw error::RuntimeError{
                     e.op, "Operands must be two numbers or strings"};
             case MINUS:
@@ -77,12 +85,17 @@ namespace lox::interpreter {
                     BinaryFn<lexer::NumberLiteral>{
                         [](auto a, auto b) { return a * b; }},
                     checkArithOp);
-            case SLASH:
-                return binary<lexer::NumberLiteral>(
-                    left, right,
-                    BinaryFn<lexer::NumberLiteral>{
-                        [](auto a, auto b) { return a / b; }},
-                    checkArithOp);
+            case SLASH: {
+                if (!(std::holds_alternative<lexer::NumberLiteral>(left) &&
+                      std::holds_alternative<lexer::NumberLiteral>(right))) {
+                    checkArithOp();
+                }
+                auto leftNum = std::get<lexer::NumberLiteral>(left);
+                auto rightNum = std::get<lexer::NumberLiteral>(right);
+                if (rightNum == 0)
+                    throw error::RuntimeError{e.op, "Division by zero"};
+                return leftNum / rightNum;
+            }
 
             case GREATER:
                 return binary<lexer::NumberLiteral, lexer::BoolLiteral>(
