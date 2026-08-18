@@ -1,10 +1,22 @@
-expression -> comma
+program -> declaration* EOF ;
 
-comma -> ternary ( ","  ternary )*  ;
+declaration -> varDecl | statement ;
+
+varDecl-> "var" IDENTIFIER ( "=" expression )? ";" ;
+
+statement -> exprStmt | printStmt | block;
+exprStmt -> expression ";" ;
+printStmt -> "print" expression ";" ;
+block -> "{" declaration* "}" ;
+
+expression -> comma ;
+
+comma -> assignment ( ","  assignment )*  ;
+assignment -> IDENTIFIER "=" assignment | ternary ;
 ternary -> equality ( "?" expression ":" ternary )? ;
 equality -> comparison ( ( "==" | "!=" ) comparison )* ;
 comparison -> term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
 term -> factor ( ("+" | "-" ) factor )* ;
 factor -> unary ( ( "/" | "*" ) unary )* ;
 unary -> ("!" | "-") unary | primary ;
-primary -> STRING | NUMBER | "true" | "false" | "nil" | "(" expression ")" ;
+primary -> STRING | NUMBER | "true" | "false" | "nil" | "(" expression ")" | IDENTIFIER ;

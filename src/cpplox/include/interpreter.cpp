@@ -1,12 +1,13 @@
 #include "interpreter.hpp"
 
+#include <memory>
 #include <variant>
 
 #include "token.hpp"
 
 namespace lox::interpreter {
 
-    bool Interpreter::isTruthy(const lexer::Literal& l) const {
+    bool Interpreter::isTruthy(const lexer::Literal& l) {
         return std::visit(
             utils::overload{[](const lexer::StringLiteral&) { return true; },
                             [](const lexer::Identifer&) { return true; },
@@ -17,7 +18,7 @@ namespace lox::interpreter {
     }
 
     bool Interpreter::isEqual(const lexer::Literal& a,
-                              const lexer::Literal& b) const {
+                              const lexer::Literal& b) {
         return std::visit(
             [](const auto& a, const auto& b) -> bool {
                 using A = std::decay_t<decltype(a)>;
@@ -31,7 +32,49 @@ namespace lox::interpreter {
             a, b);
     }
 
-    lexer::Literal Interpreter::eval(const ast::Unary& e) const {
+    lexer::Literal Interpreter::eval(const ast::Print& s) {
+        auto val = visit(s.expr);
+        std::println("{}", std::visit(ast::LiteralPrinter, val));
+        return std::monostate{};
+    }
+
+    lexer::Literal Interpreter::eval(const ast::Var& s) {
+        lexer::Literal val{std::monostate{}};
+        if (s.init) {
+            val = visit(s.init);
+        }
+
+        env->define(s.name.lexeme, val);
+        return std::monostate{};
+    }
+
+    lexer::Literal Interpreter::eval(const ast::Block& s,
+                                     const environment::EnvPtr& env) {
+        auto prev = this->env;
+        utils::ScopeGuard guard{[this, prev] { this->env = prev; }};
+
+        this->env = env;
+        for (const auto& stmt : s.stmts) {
+            exec(stmt);
+        }
+        return std::monostate{};
+    }
+
+    lexer::Literal Interpreter::visit(const ast::StmtPtr& stmt) {
+        return std::visit(
+            utils::overload{
+                [this](const ast::Print& s) { return eval(s); },
+                [this](const ast::Expression& s) { return visit(s.expr); },
+                [this](const ast::Var& s) { return eval(s); },
+                [this](const ast::Block& s) {
+                    return eval(
+                        s, std::make_shared<environment::Environment>(env));
+                },
+            },
+            *stmt);
+    }
+
+    lexer::Literal Interpreter::eval(const ast::Unary& e) {
         using enum lexer::TokenType;
         auto right = visit(e.right);
 
@@ -46,7 +89,7 @@ namespace lox::interpreter {
         return std::monostate{};
     }
 
-    lexer::Literal Interpreter::eval(const ast::Binary& e) const {
+    lexer::Literal Interpreter::eval(const ast::Binary& e) {
         using enum lexer::TokenType;
         auto left = visit(e.left);
         auto right = visit(e.right);
@@ -125,14 +168,14 @@ namespace lox::interpreter {
         return std::monostate{};
     }
 
-    lexer::Literal Interpreter::eval(const ast::Ternary& e) const {
+    lexer::Literal Interpreter::eval(const ast::Ternary& e) {
         using enum lexer::TokenType;
         auto left = visit(e.left);
         auto mid = visit(e.mid);
         auto right = visit(e.right);
 
         if (e.op1.type != QUESTION_MARK && e.op2.type != COMMA)
-            throw std::runtime_error{"Invalid ternary operation"};
+            throw error::RuntimeError{e.op1, "Invalid ternary operation"};
 
         if (isTruthy(left)) {
             return mid;
@@ -141,22 +184,32 @@ namespace lox::interpreter {
         }
     }
 
-    lexer::Literal Interpreter::visit(const ast::ExprPtr& expr) const {
+    lexer::Literal Interpreter::visit(const ast::ExprPtr& expr) {
         return std::visit(
             utils::overload{
+                [this](const ast::Assign& e) {
+                    auto val = visit(e.value);
+                    env->assign(e.name, val);
+                    return val;
+                },
                 [this](const ast::Binary& e) { return eval(e); },
                 [this](const ast::Unary& e) { return eval(e); },
                 [this](const ast::Ternary& e) { return eval(e); },
                 [this](const ast::Grouping& e) { return visit(e.expr); },
+                [this](const ast::Variable& e) { return env->get(e.name); },
                 [](const ast::Literal& e) { return e.val; },
             },
             *expr);
     }
 
-    void Interpreter::interpret(const ast::ExprPtr& expr) const {
+    void Interpreter::exec(const ast::StmtPtr& stmt) {
+        if (!stmt) return;
+        visit(stmt);
+    }
+
+    void Interpreter::interpret(const parser::Statements& stmts) {
         try {
-            auto res = visit(expr);
-            std::println("{}", std::visit(ast::LiteralPrinter, res));
+            for (const auto& stmt : stmts) exec(stmt);
         } catch (const error::RuntimeError& e) {
             lox::Lox::runtimeError(e);
         }

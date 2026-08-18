@@ -37,7 +37,7 @@ ehthumbs.db
 Thumbs.db
 
 # Misc
-test.lox
+*.lox
 
 # book files
 craftinginterpreters

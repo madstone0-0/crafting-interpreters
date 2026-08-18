@@ -1,8 +1,14 @@
 #include "parser.hpp"
 
+#include <variant>
+
+#include "stmt.hpp"
+#include "token.hpp"
+
 namespace lox::parser {
 
-    error::ParseError Parser::error(const lexer::Token& tok, const std::string& msg) {
+    error::ParseError Parser::error(const lexer::Token& tok,
+                                    const std::string& msg) {
         lox::Lox::error(tok, msg);
         return error::ParseError{tok, msg.c_str()};
     }
@@ -56,7 +62,70 @@ namespace lox::parser {
         throw error(peek(), msg);
     }
 
-    ast::ExprPtr Parser::expression() { return comma(); }
+    ast::StmtPtr Parser::declaration() {
+        using enum lexer::TokenType;
+
+        try {
+            if (match(VAR)) return varDecl();
+
+            return statement();
+        } catch (const error::ParseError& e) {
+            sync();
+            return nullptr;
+        }
+    }
+
+    ast::StmtPtr Parser::varDecl() {
+        using enum lexer::TokenType;
+
+        auto name = consume(IDENTIFER, "Expect variable name.");
+
+        ast::ExprPtr init{};
+        if (match(EQUAL)) init = expression();
+
+        consume(SEMICOLON, "Expect ';' after variable declaration.");
+
+        return box(ast::Var{
+            .name = name,
+            .init = std::move(init),
+        });
+    }
+
+    ast::StmtPtr Parser::statement() {
+        using enum lexer::TokenType;
+        if (match(PRINT)) return printStmt();
+        if (match(LEFT_BRACE)) return box(ast::Block{block()});
+        return exprStmt();
+    }
+
+    ast::StmtPtr Parser::exprStmt() {
+        using enum lexer::TokenType;
+
+        auto expr = expression();
+        consume(SEMICOLON, "Expect ';' after value");
+        return box(ast::Expression{std::move(expr)});
+    }
+
+    ast::StmtPtr Parser::printStmt() {
+        using enum lexer::TokenType;
+
+        auto val = expression();
+        consume(SEMICOLON, "Expect ';' after value");
+        return box(ast::Print{std::move(val)});
+    }
+
+    Statements Parser::block() {
+        using enum lexer::TokenType;
+        Statements stmts;
+
+        while (!check(RIGHT_BRACE) && !isAtEnd())
+            stmts.emplace_back(declaration());
+
+        consume(RIGHT_BRACE, "Expected '}' after block");
+        return stmts;
+    }
+
+    ast::ExprPtr Parser::expression() { return assignment(); }
 
     ast::ExprPtr Parser::comma() {
         using enum lexer::TokenType;
@@ -70,6 +139,28 @@ namespace lox::parser {
                 .op = op,
                 .right = std::move(right),
             });
+        }
+
+        return expr;
+    }
+
+    ast::ExprPtr Parser::assignment() {
+        using enum lexer::TokenType;
+        auto expr = ternary();
+
+        if (match(EQUAL)) {
+            auto equals = prev();
+            auto val = assignment();
+
+            if (auto* variable = std::get_if<ast::Variable>(&(*expr))) {
+                auto name = variable->name;
+                return box(ast::Assign{
+                    .name = name,
+                    .value = std::move(val),
+                });
+            }
+
+            error(equals, "Invalid assignment target.");
         }
 
         return expr;
@@ -142,6 +233,8 @@ namespace lox::parser {
 
         if (match(NUMBER, STRING)) return box(ast::Literal{prev().literal});
 
+        if (match(IDENTIFER)) return box(ast::Variable{prev()});
+
         if (match(LEFT_PAREN)) {
             auto expr = expression();
             consume(RIGHT_PAREN, "Expect ')' after expression.");
@@ -149,5 +242,13 @@ namespace lox::parser {
         }
 
         throw error(peek(), "Expect expression");
+    }
+
+    Statements Parser::parse() {
+        Statements stmts;
+
+        while (!isAtEnd()) stmts.emplace_back(declaration());
+
+        return stmts;
     }
 }

@@ -7,22 +7,27 @@
 #include <type_traits>
 #include <variant>
 
+#include "environment.hpp"
+#include "error.hpp"
 #include "expr.hpp"
 #include "lox.hpp"
+#include "parser.hpp"
+#include "stmt.hpp"
 #include "token.hpp"
-#include "error.hpp"
 
 namespace lox::interpreter {
 
     class Interpreter {
        private:
-        bool isTruthy(const lexer::Literal& l) const;
+        environment::EnvPtr env{std::make_shared<environment::Environment>()};
 
-        bool isEqual(const lexer::Literal& a, const lexer::Literal& b) const;
+        bool isTruthy(const lexer::Literal&);
+
+        bool isEqual(const lexer::Literal&, const lexer::Literal&);
 
         template <class... Operands>
         void checkNumberOperand(const lexer::Token& op,
-                                const Operands&... operands) const {
+                                const Operands&... operands) {
             bool all{true};
             for (const auto& operand : {operands...}) {
                 if (!std::holds_alternative<lexer::NumberLiteral>(operand)) {
@@ -39,7 +44,7 @@ namespace lox::interpreter {
         template <class T, class R>
         R binary(const lexer::Literal& a, const lexer::Literal& b,
                  const BinaryFn<T, R>& f,
-                 const std::function<void()>& onFail) const {
+                 const std::function<void()>& onFail) {
             if (!(std::holds_alternative<T>(a) &&
                   std::holds_alternative<T>(b))) {
                 onFail();
@@ -47,14 +52,22 @@ namespace lox::interpreter {
             return f(std::get<T>(a), std::get<T>(b));
         }
 
-        lexer::Literal eval(const ast::Unary& e) const;
-        lexer::Literal eval(const ast::Binary& e) const;
-        lexer::Literal eval(const ast::Ternary& e) const;
+        lexer::Literal eval(const ast::Print&);
+        lexer::Literal eval(const ast::Var&);
+        lexer::Literal eval(const ast::Block&, const environment::EnvPtr&);
 
-        lexer::Literal visit(const ast::ExprPtr& expr) const;
+        lexer::Literal visit(const ast::StmtPtr&);
+
+        lexer::Literal eval(const ast::Unary&);
+        lexer::Literal eval(const ast::Binary&);
+        lexer::Literal eval(const ast::Ternary&);
+
+        lexer::Literal visit(const ast::ExprPtr&);
+
+        void exec(const ast::StmtPtr&);
 
        public:
-        void interpret(const ast::ExprPtr& expr) const;
+        void interpret(const parser::Statements&);
     };
 
 };

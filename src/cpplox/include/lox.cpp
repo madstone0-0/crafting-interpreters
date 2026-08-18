@@ -7,7 +7,7 @@
 namespace lox {
     bool Lox::hadError = false;
     bool Lox::hadRuntimeError = false;
-    const interpreter::Interpreter Lox::interpreter{};
+    interpreter::Interpreter Lox::interpreter{};
 
     Lox& Lox::Ins() {
         static Lox instance;
@@ -41,10 +41,11 @@ namespace lox {
         lexer::Lexer lexer{in};
         auto tokens = lexer.scanTokens();
         parser::Parser parser{tokens};
-        auto expr = parser.parse();
+        auto stmts = parser.parse();
 
-        if (!expr) return;
-        interpreter.interpret(expr);
+        if (hadError) return;
+
+        interpreter.interpret(stmts);
     }
 
     int Lox::runFile(std::string_view path) {
@@ -83,6 +84,8 @@ namespace lox {
             rx.history_add(buf);
             run(buf);
             buf.clear();
+            hadError = false;
+            hadRuntimeError = false;
         }
     }
 

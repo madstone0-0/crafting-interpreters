@@ -60,4 +60,12 @@ namespace lox::utils {
     };
     template <class... Ts>
     overload(Ts...) -> overload<Ts...>;
+
+    template <class F>
+    struct ScopeGuard {
+        F onExit;
+        ~ScopeGuard() { onExit(); }
+    };
+    template <class F>
+    ScopeGuard(F) -> ScopeGuard<F>;
 }

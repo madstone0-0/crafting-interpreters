@@ -3,7 +3,9 @@ from subprocess import PIPE, Popen
 from sys import argv, exit
 
 
-def defineAST(outputDir: str, base: str, types: list[str]) -> None:
+def defineAST(
+    outputDir: str, base: str, types: list[str], includes: list[str] = []
+) -> None:
     basePath = Path(outputDir)
     basePath.mkdir(parents=True, exist_ok=True)
     headerPath = basePath / f"{base.lower()}.hpp"
@@ -24,6 +26,7 @@ def defineAST(outputDir: str, base: str, types: list[str]) -> None:
 #include <memory>
 #include <variant>
 #include "token.hpp"
+{"".join(f'#include "{inc}"\n' for inc in includes)}
 
 namespace lox::ast {{
 
@@ -65,15 +68,31 @@ if __name__ == "__main__":
         print("Usage: genAST <output directory>")
         exit(64)
     try:
+        dir = argv[1]
         defineAST(
-            argv[1],
+            dir,
             "Expr",
             [
+                "Assign : lox::lexer::Token name, Expr value",
                 "Binary : Expr left, lox::lexer::Token op, Expr right",
                 "Unary : lox::lexer::Token op, Expr right",
                 "Ternary : Expr left, lox::lexer::Token op1, Expr mid, lox::lexer::Token op2, Expr right",
                 "Grouping : Expr expr",
                 "Literal : lox::lexer::Literal val",
+                "Variable : lox::lexer::Token name",
+            ],
+        )
+        defineAST(
+            dir,
+            "Stmt",
+            [
+                "Block : std::vector<StmtPtr> stmts",
+                "Expression : ExprPtr expr",
+                "Print : ExprPtr expr",
+                "Var : lox::lexer::Token name, ExprPtr init",
+            ],
+            [
+                "expr.hpp",
             ],
         )
     except Exception as e:

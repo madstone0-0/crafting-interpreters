@@ -20,7 +20,7 @@ namespace lox {
 
         static bool hadRuntimeError;
 
-        static const interpreter::Interpreter interpreter;
+        static interpreter::Interpreter interpreter;
 
         static void error(const lox::lexer::Token&, std::string_view);
 

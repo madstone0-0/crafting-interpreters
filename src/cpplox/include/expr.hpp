@@ -10,6 +10,11 @@ namespace lox::ast {
     struct Expr;
     using ExprPtr = std::unique_ptr<Expr>;
 
+    struct Assign {
+        lox::lexer::Token name;
+        ExprPtr value;
+    };
+
     struct Binary {
         ExprPtr left;
         lox::lexer::Token op;
@@ -37,8 +42,12 @@ namespace lox::ast {
         lox::lexer::Literal val;
     };
 
-    using ExprVariant =
-        std::variant<Binary, Unary, Ternary, Grouping, Literal>;
+    struct Variable {
+        lox::lexer::Token name;
+    };
+
+    using ExprVariant = std::variant<Assign, Binary, Unary, Ternary, Grouping,
+                                     Literal, Variable>;
     struct Expr : ExprVariant {
         using ExprVariant::ExprVariant;
     };

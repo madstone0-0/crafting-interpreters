@@ -3,15 +3,18 @@
 #include <functional>
 #include <stdexcept>
 #include <utility>
+#include <vector>
 
 #include "ast.hpp"
 #include "error.hpp"
 #include "expr.hpp"
 #include "lexer.hpp"
+#include "stmt.hpp"
 #include "token.hpp"
 
 namespace lox::parser {
     using ast::box;
+    using Statements = std::vector<ast::StmtPtr>;
 
     class Parser {
        private:
@@ -65,14 +68,49 @@ namespace lox::parser {
         }
 
         /**
+         * @brief declaration -> varDecl | statement ;
+         */
+        ast::StmtPtr declaration();
+
+        /**
+         * @brief varDecl-> "var" IDENTIFIER ( "=" expression )? ";" ;
+         */
+        ast::StmtPtr varDecl();
+
+        /**
+         * @brief statement -> exprStmt | printStmt;
+         */
+        ast::StmtPtr statement();
+
+        /**
+         * @brief exprStmt -> expression ";" ;
+         */
+        ast::StmtPtr exprStmt();
+
+        /**
+         * @brief printStmt -> "print" expression ";" ;
+         */
+        ast::StmtPtr printStmt();
+
+        /**
+         * @brief block -> "{" declaration* "}" ;
+         */
+        Statements block();
+
+        /**
          * @brief expression -> comma
          */
         ast::ExprPtr expression();
 
         /**
-         * @brief comma -> ternary ( ","  ternary )*  ;
+         * @brief comma -> assignment ( ","  assignment )*  ;
          */
         ast::ExprPtr comma();
+
+        /**
+         * @brief  assignment -> IDENTIFIER "=" assignment | ternary ;
+         */
+        ast::ExprPtr assignment();
 
         /**
          * @brief ternary -> equality ( "?" expression ":" ternary )? ;
@@ -114,13 +152,7 @@ namespace lox::parser {
         Parser(lexer::Tokens tok)
         : tokens{std::move(tok)} {}
 
-        ast::ExprPtr parse() {
-            try {
-                return expression();
-            } catch (const error::ParseError& e) {
-                return nullptr;
-            }
-        }
+        Statements parse();
     };
 
 }
