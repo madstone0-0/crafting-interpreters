@@ -5,7 +5,6 @@
 #include <boost/program_options/variables_map.hpp>
 #include <exception>
 #include <iostream>
-#include <memory>
 #include <print>
 
 #include "include/ast.hpp"

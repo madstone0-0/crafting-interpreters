@@ -43,15 +43,7 @@ namespace lox {
         parser::Parser parser{tokens};
         auto expr = parser.parse();
 
-        if (hadRuntimeError) {
-            hadRuntimeError = false;
-        }
-
-        if (hadError) {
-            hadError = false;
-            return;
-        }
-
+        if (!expr) return;
         interpreter.interpret(expr);
     }
 
