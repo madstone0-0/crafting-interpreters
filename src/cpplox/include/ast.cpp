@@ -29,30 +29,44 @@ namespace lox::ast {
                 [](const Variable& e) {
                     return detail::parenthesize(e.name.lexeme);
                 },
-            },
+                [](const Logical& e) {
+                    return detail::parenthesize(e.op.lexeme, e.left, e.right);
+                }},
             *expr);
     }
 
     std::string astPrinter(const StmtPtr& stmt) {
-        return std::visit(utils::overload{
-                              [](const Block& s) {
-                                  std::string res;
-                                  for (const auto& st : s.stmts) {
-                                      res += +"\t" + astPrinter(st) + "\n";
-                                  }
-                                  return std::format("( block\t\n{})", res);
-                              },
-                              [](const Expression& s) {
-                                  return detail::parenthesize("expr", s.expr);
-                              },
-                              [](const Print& s) {
-                                  return detail::parenthesize("print", s.expr);
-                              },
-                              [](const Var& s) {
-                                  return detail::parenthesize(s.name, s.init);
-                              },
-                          },
-                          *stmt);
+        return std::visit(
+            utils::overload{
+                [](const Block& s) {
+                    std::string res;
+                    for (const auto& st : s.stmts) {
+                        res += +"\t" + astPrinter(st) + "\n";
+                    }
+                    return std::format("( block\t\n{})", res);
+                },
+                [](const If& s) {
+                    return detail::parenthesize("if", s.condition, s.thenBr,
+                                                s.elseBr);
+                },
+                [](const While& s) {
+                    return detail::parenthesize("while", s.condition, s.body);
+                },
+                [](const For& s) {
+                    return detail::parenthesize("for", s.init, s.condition,
+                                                s.inc);
+                },
+                [](const Expression& s) {
+                    return detail::parenthesize("expr", s.expr);
+                },
+                [](const Print& s) {
+                    return detail::parenthesize("print", s.expr);
+                },
+                [](const Var& s) {
+                    return detail::parenthesize(s.name, s.init);
+                },
+            },
+            *stmt);
     }
 
     // std::string rpnAstPrinter(const ExprPtr& expr) {

@@ -16,6 +16,8 @@ def defineAST(
         className = className.strip()
         props: list[tuple[str, str]] = []
         for prop in fields.strip().split(","):
+            if not prop:
+                break
             typ, name = prop.strip().split()
             props.append((typ, name))
         nodes.append((className, props))
@@ -80,6 +82,7 @@ if __name__ == "__main__":
                 "Grouping : Expr expr",
                 "Literal : lox::lexer::Literal val",
                 "Variable : lox::lexer::Token name",
+                "Logical : Expr left, lox::lexer::Token op, Expr right",
             ],
         )
         defineAST(
@@ -88,6 +91,9 @@ if __name__ == "__main__":
             [
                 "Block : std::vector<StmtPtr> stmts",
                 "Expression : ExprPtr expr",
+                "If : ExprPtr condition, Stmt thenBr, Stmt elseBr",
+                "While : ExprPtr condition, Stmt body",
+                "For : Stmt init, ExprPtr condition, ExprPtr inc",
                 "Print : ExprPtr expr",
                 "Var : lox::lexer::Token name, ExprPtr init",
             ],

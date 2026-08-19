@@ -4,7 +4,10 @@ declaration -> varDecl | statement ;
 
 varDecl-> "var" IDENTIFIER ( "=" expression )? ";" ;
 
-statement -> exprStmt | printStmt | block;
+statement -> exprStmt | printStmt | ifStmt | whileStmt | forStmt |  block;
+ifStmt -> "if" "(" expression ")" statement ( "else" statement )? ;
+whileStmt -> "while" "(" expression ")" statement  ;
+forStmt -> "for" "(" ( varDecl | exprStmt | ";" ) expression? ";" expression? ")" statement ;
 exprStmt -> expression ";" ;
 printStmt -> "print" expression ";" ;
 block -> "{" declaration* "}" ;
@@ -12,7 +15,9 @@ block -> "{" declaration* "}" ;
 expression -> comma ;
 
 comma -> assignment ( ","  assignment )*  ;
-assignment -> IDENTIFIER "=" assignment | ternary ;
+assignment -> IDENTIFIER "=" assignment | logic_or ;
+logic_or -> logic_and ( "or" logic_and )* ;
+logic_and -> ternary ( "and" ternary)* ;
 ternary -> equality ( "?" expression ":" ternary )? ;
 equality -> comparison ( ( "==" | "!=" ) comparison )* ;
 comparison -> term ( ( ">" | ">=" | "<" | "<=" ) term )* ;

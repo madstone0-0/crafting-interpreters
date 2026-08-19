@@ -55,12 +55,16 @@ namespace lox::interpreter {
         lexer::Literal eval(const ast::Print&);
         lexer::Literal eval(const ast::Var&);
         lexer::Literal eval(const ast::Block&, const environment::EnvPtr&);
+        lexer::Literal eval(const ast::If&);
+        lexer::Literal eval(const ast::While&);
+        lexer::Literal eval(const ast::For&);
 
         lexer::Literal visit(const ast::StmtPtr&);
 
         lexer::Literal eval(const ast::Unary&);
         lexer::Literal eval(const ast::Binary&);
         lexer::Literal eval(const ast::Ternary&);
+        lexer::Literal eval(const ast::Logical&);
 
         lexer::Literal visit(const ast::ExprPtr&);
 

@@ -93,6 +93,23 @@ namespace lox::parser {
         ast::StmtPtr printStmt();
 
         /**
+         * @brief ifStmt -> "if" "(" expression ")" statement ( "else"
+         * statement )? ;
+         */
+        ast::StmtPtr ifStmt();
+
+        /**
+         * @brief whileStmt -> "while" "(" expression ")" statement ;
+         */
+        ast::StmtPtr whileStmt();
+
+        /**
+         * @brief forStmt -> "for" "(" ( varDecl | exprStmt | ";" ) expression?
+         * ";" expression? ")" statement ;
+         */
+        ast::StmtPtr forStmt();
+
+        /**
          * @brief block -> "{" declaration* "}" ;
          */
         Statements block();
@@ -111,6 +128,16 @@ namespace lox::parser {
          * @brief  assignment -> IDENTIFIER "=" assignment | ternary ;
          */
         ast::ExprPtr assignment();
+
+        /**
+         * @brief logic_or -> logic_and ( "or" logic_and )* ;
+         */
+        ast::ExprPtr logicOr();
+
+        /**
+         * @brief logic_and -> ternary ( "and" ternary)* ;
+         */
+        ast::ExprPtr logicAnd();
 
         /**
          * @brief ternary -> equality ( "?" expression ":" ternary )? ;

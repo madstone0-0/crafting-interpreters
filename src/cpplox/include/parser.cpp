@@ -2,6 +2,7 @@
 
 #include <variant>
 
+#include "expr.hpp"
 #include "stmt.hpp"
 #include "token.hpp"
 
@@ -93,6 +94,9 @@ namespace lox::parser {
 
     ast::StmtPtr Parser::statement() {
         using enum lexer::TokenType;
+        if (match(IF)) return ifStmt();
+        if (match(WHILE)) return whileStmt();
+        if (match(FOR)) return forStmt();
         if (match(PRINT)) return printStmt();
         if (match(LEFT_BRACE)) return box(ast::Block{block()});
         return exprStmt();
@@ -112,6 +116,94 @@ namespace lox::parser {
         auto val = expression();
         consume(SEMICOLON, "Expect ';' after value");
         return box(ast::Print{std::move(val)});
+    }
+
+    ast::StmtPtr Parser::ifStmt() {
+        using enum lexer::TokenType;
+        consume(LEFT_PAREN, "Expect '(' after 'if'.");
+        auto cond = expression();
+        consume(RIGHT_PAREN, "Expect ')' after if condition.");
+
+        auto thenBr = statement();
+        ast::StmtPtr elseBr{nullptr};
+        if (match(ELSE)) {
+            elseBr = statement();
+        }
+
+        return box(ast::If{
+            .condition = std::move(cond),
+            .thenBr = std::move(thenBr),
+            .elseBr = std::move(elseBr),
+        });
+    }
+
+    ast::StmtPtr Parser::whileStmt() {
+        using enum lexer::TokenType;
+        consume(LEFT_PAREN, "Expect '(' after 'while'.");
+        auto cond = expression();
+        consume(RIGHT_PAREN, "Expect ')' after while loop.");
+
+        auto body = statement();
+
+        return box(ast::While{
+            .condition = std::move(cond),
+            .body = std::move(body),
+        });
+    }
+
+    ast::StmtPtr Parser::forStmt() {
+        using enum lexer::TokenType;
+        consume(LEFT_PAREN, "Expect '(' after 'for'.");
+
+        ast::StmtPtr init{};
+        if (match(SEMICOLON))
+            init = nullptr;
+        else if (match(VAR))
+            init = varDecl();
+        else
+            init = exprStmt();
+
+        ast::ExprPtr cond{};
+        if (!check(SEMICOLON)) cond = expression();
+
+        consume(SEMICOLON, "Expect ';' after loop condition.");
+
+        ast::ExprPtr inc{};
+        if (!check(RIGHT_PAREN)) inc = expression();
+        consume(RIGHT_PAREN, "Expect ')' after for clauses.");
+
+        // Desugaring basically converts the for loop into it's equivalent
+        // while loop, i.e.:
+        // {
+        //  INIT?
+        //  while (COND || true) {
+        //      BODY
+        //      INC?
+        //  }
+        // }
+        //
+        auto body = statement();
+        if (inc) {
+            Statements s;
+            s.emplace_back(std::move(body));
+            s.emplace_back(box(ast::Expression{std::move(inc)}));
+
+            body = box(ast::Block{.stmts = std::move(s)});
+        }
+
+        if (!cond) cond = box(ast::Literal{true});
+        body = box(
+            ast::While{.condition = std::move(cond), .body = std::move(body)});
+
+        if (init) {
+            Statements s;
+            s.emplace_back(std::move(init));
+            s.emplace_back(std::move(body));
+
+            body = box(ast::Block{.stmts = std::move(s)});
+        }
+
+        return body;
     }
 
     Statements Parser::block() {
@@ -146,7 +238,7 @@ namespace lox::parser {
 
     ast::ExprPtr Parser::assignment() {
         using enum lexer::TokenType;
-        auto expr = ternary();
+        auto expr = logicOr();
 
         if (match(EQUAL)) {
             auto equals = prev();
@@ -161,6 +253,40 @@ namespace lox::parser {
             }
 
             error(equals, "Invalid assignment target.");
+        }
+
+        return expr;
+    }
+
+    ast::ExprPtr Parser::logicOr() {
+        using enum lexer::TokenType;
+        auto expr = logicAnd();
+
+        while (match(OR)) {
+            auto op = prev();
+            auto right = logicAnd();
+            expr = box(ast::Logical{
+                .left = std::move(expr),
+                .op = op,
+                .right = std::move(right),
+            });
+        }
+
+        return expr;
+    }
+
+    ast::ExprPtr Parser::logicAnd() {
+        using enum lexer::TokenType;
+        auto expr = ternary();
+
+        while (match(AND)) {
+            auto op = prev();
+            auto right = ternary();
+            expr = box(ast::Logical{
+                .left = std::move(expr),
+                .op = op,
+                .right = std::move(right),
+            });
         }
 
         return expr;

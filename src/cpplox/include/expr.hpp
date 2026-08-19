@@ -46,8 +46,14 @@ namespace lox::ast {
         lox::lexer::Token name;
     };
 
+    struct Logical {
+        ExprPtr left;
+        lox::lexer::Token op;
+        ExprPtr right;
+    };
+
     using ExprVariant = std::variant<Assign, Binary, Unary, Ternary, Grouping,
-                                     Literal, Variable>;
+                                     Literal, Variable, Logical>;
     struct Expr : ExprVariant {
         using ExprVariant::ExprVariant;
     };

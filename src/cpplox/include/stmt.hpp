@@ -19,6 +19,23 @@ namespace lox::ast {
         ExprPtr expr;
     };
 
+    struct If {
+        ExprPtr condition;
+        StmtPtr thenBr;
+        StmtPtr elseBr;
+    };
+
+    struct While {
+        ExprPtr condition;
+        StmtPtr body;
+    };
+
+    struct For {
+        StmtPtr init;
+        ExprPtr condition;
+        ExprPtr inc;
+    };
+
     struct Print {
         ExprPtr expr;
     };
@@ -28,7 +45,8 @@ namespace lox::ast {
         ExprPtr init;
     };
 
-    using StmtVariant = std::variant<Block, Expression, Print, Var>;
+    using StmtVariant =
+        std::variant<Block, Expression, If, While, For, Print, Var>;
     struct Stmt : StmtVariant {
         using StmtVariant::StmtVariant;
     };

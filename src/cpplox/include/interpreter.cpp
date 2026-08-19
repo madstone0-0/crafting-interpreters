@@ -1,5 +1,6 @@
 #include "interpreter.hpp"
 
+#include <algorithm>
 #include <memory>
 #include <variant>
 
@@ -60,11 +61,34 @@ namespace lox::interpreter {
         return std::monostate{};
     }
 
+    lexer::Literal Interpreter::eval(const ast::If& s) {
+        if (isTruthy(visit(s.condition))) {
+            exec(s.thenBr);
+        } else if (s.elseBr) {
+            exec(s.elseBr);
+        }
+        return std::monostate{};
+    }
+
+    lexer::Literal Interpreter::eval(const ast::While& s) {
+        while (isTruthy(visit(s.condition))) {
+            exec(s.body);
+        }
+        return std::monostate{};
+    }
+
+    lexer::Literal Interpreter::eval(const ast::For&) {
+        return std::monostate{};
+    }
+
     lexer::Literal Interpreter::visit(const ast::StmtPtr& stmt) {
         return std::visit(
             utils::overload{
                 [this](const ast::Print& s) { return eval(s); },
                 [this](const ast::Expression& s) { return visit(s.expr); },
+                [this](const ast::If& s) { return eval(s); },
+                [this](const ast::While& s) { return eval(s); },
+                [this](const ast::For& s) { return eval(s); },
                 [this](const ast::Var& s) { return eval(s); },
                 [this](const ast::Block& s) {
                     return eval(
@@ -170,18 +194,27 @@ namespace lox::interpreter {
 
     lexer::Literal Interpreter::eval(const ast::Ternary& e) {
         using enum lexer::TokenType;
-        auto left = visit(e.left);
-        auto mid = visit(e.mid);
-        auto right = visit(e.right);
 
         if (e.op1.type != QUESTION_MARK && e.op2.type != COMMA)
             throw error::RuntimeError{e.op1, "Invalid ternary operation"};
 
-        if (isTruthy(left)) {
-            return mid;
+        if (isTruthy(visit(e.left))) {
+            return visit(e.mid);
         } else {
-            return right;
+            return visit(e.right);
         }
+    }
+
+    lexer::Literal Interpreter::eval(const ast::Logical& e) {
+        auto left = visit(e.left);
+
+        if (e.op.type == lexer::TokenType::OR) {
+            if (isTruthy(left)) return left;
+        } else {
+            if (!isTruthy(left)) return left;
+        }
+
+        return visit(e.right);
     }
 
     lexer::Literal Interpreter::visit(const ast::ExprPtr& expr) {
@@ -197,6 +230,7 @@ namespace lox::interpreter {
                 [this](const ast::Ternary& e) { return eval(e); },
                 [this](const ast::Grouping& e) { return visit(e.expr); },
                 [this](const ast::Variable& e) { return env->get(e.name); },
+                [this](const ast::Logical& e) { return eval(e); },
                 [](const ast::Literal& e) { return e.val; },
             },
             *expr);
