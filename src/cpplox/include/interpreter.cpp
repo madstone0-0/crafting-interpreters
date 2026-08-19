@@ -205,6 +205,10 @@ namespace lox::interpreter {
     void Interpreter::exec(const ast::StmtPtr& stmt) {
         if (!stmt) return;
         auto res = visit(stmt);
+
+#ifdef DEBUG
+        std::println("{}", ast::astPrinter(stmt));
+#endif
         if (std::holds_alternative<ast::Expression>(*stmt)) {
             std::println("{}", std::visit(ast::LiteralPrinter, res));
         }
