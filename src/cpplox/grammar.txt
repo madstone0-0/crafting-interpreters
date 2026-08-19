@@ -1,14 +1,18 @@
 program -> declaration* EOF ;
 
-declaration -> varDecl | statement ;
+declaration -> funDec | varDecl | statement ;
 
-varDecl-> "var" IDENTIFIER ( "=" expression )? ";" ;
+varDecl -> "var" IDENTIFIER ( "=" expression )? ";" ;
+funDec -> "fun" function ;
+parameters -> IDENTIFIER ( "," IDENTIFIER )* ;
+function -> IDENTIFIER "(" parameters? ")" block ;
 
-statement -> exprStmt | printStmt | ifStmt | whileStmt | forStmt | breakStmt |  block;
+statement -> exprStmt | printStmt | ifStmt | whileStmt | forStmt | breakStmt | returnStmt | block;
 breakStmt -> "break" ";" ;
 ifStmt -> "if" "(" expression ")" statement ( "else" statement )? ;
 whileStmt -> "while" "(" expression ")" statement  ;
 forStmt -> "for" "(" ( varDecl | exprStmt | ";" ) expression? ";" expression? ")" statement ;
+returnStmt -> "return" expression? ";" ;
 exprStmt -> expression ";" ;
 printStmt -> "print" expression ";" ;
 block -> "{" declaration* "}" ;
@@ -24,5 +28,7 @@ equality -> comparison ( ( "==" | "!=" ) comparison )* ;
 comparison -> term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
 term -> factor ( ("+" | "-" ) factor )* ;
 factor -> unary ( ( "/" | "*" ) unary )* ;
-unary -> ("!" | "-") unary | primary ;
+unary -> ("!" | "-") unary | call ;
+arguments -> expression ( "," expression )* ;
+call -> primary ( "(" arguments? ")" )* ;
 primary -> STRING | NUMBER | "true" | "false" | "nil" | "(" expression ")" | IDENTIFIER ;

@@ -2,6 +2,7 @@
 
 #include <stdexcept>
 
+#include "literal.hpp"
 #include "token.hpp"
 
 namespace lox::error {
@@ -21,4 +22,11 @@ namespace lox::error {
     };
 
     struct BreakError : std::exception {};
+
+    struct Return : std::exception {
+        const lexer::Literal val;
+
+        Return(lexer::Literal val)
+        : val{std::move(val)} {}
+    };
 }

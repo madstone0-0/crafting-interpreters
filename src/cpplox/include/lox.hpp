@@ -30,7 +30,7 @@ namespace lox {
 
         static void report(size_t, std::string_view, std::string_view);
 
-        static void run(std::string_view);
+        static void run(std::string_view, bool repl = false);
 
         static int runFile(std::string_view);
 

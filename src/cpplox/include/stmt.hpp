@@ -19,6 +19,12 @@ namespace lox::ast {
         ExprPtr expr;
     };
 
+    struct Function {
+        lox::lexer::Token name;
+        std::vector<lox::lexer::Token> params;
+        std::vector<StmtPtr> body;
+    };
+
     struct If {
         ExprPtr condition;
         StmtPtr thenBr;
@@ -45,10 +51,17 @@ namespace lox::ast {
         ExprPtr init;
     };
 
-    struct Break {};
+    struct Break {
+        lox::lexer::Token keyword;
+    };
 
-    using StmtVariant =
-        std::variant<Block, Expression, If, While, For, Print, Var, Break>;
+    struct Return {
+        lox::lexer::Token keyword;
+        ExprPtr val;
+    };
+
+    using StmtVariant = std::variant<Block, Expression, Function, If, While,
+                                     For, Print, Var, Break, Return>;
     struct Stmt : StmtVariant {
         using StmtVariant::StmtVariant;
     };

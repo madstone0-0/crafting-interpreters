@@ -10,8 +10,8 @@
 #include <variant>
 #include <vector>
 
-#include "token.hpp"
 #include "utils.hpp"
+#include "literal.hpp"
 
 namespace lox::lexer {
 
@@ -67,26 +67,6 @@ namespace lox::lexer {
 
         EOF_
     };
-
-    struct Identifer {
-        std::string name;
-    };
-
-    using StringLiteral = std::string;
-    using NumberLiteral = double;
-    using BoolLiteral = bool;
-
-    using LiteralVariant = std::variant<std::monostate, StringLiteral,
-                                        NumberLiteral, BoolLiteral>;
-    using Literal = LiteralVariant;
-
-    inline constexpr auto LiteralVisitor = utils::overload{
-        [](const lexer::StringLiteral& e) { return e; },
-        [](const lexer::NumberLiteral& e) { return std::to_string(e); },
-        [](const lexer::BoolLiteral& e) {
-            return std::string{e ? "true" : "false"};
-        },
-        [](std::monostate) { return std::string{""}; }};
 
     struct Token {
         const TokenType type{};

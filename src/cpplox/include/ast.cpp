@@ -10,7 +10,7 @@ namespace lox::ast {
         return std::visit(
             utils::overload{
                 [](const Assign& e) {
-                    return detail::parenthesize(e.name.lexeme, e.value);
+                    return detail::parenthesize(e.name.lexeme, e.val);
                 },
                 [](const Binary& e) {
                     return detail::parenthesize(e.op.lexeme, e.left, e.right);
@@ -33,7 +33,11 @@ namespace lox::ast {
                 },
                 [](const Logical& e) {
                     return detail::parenthesize(e.op.lexeme, e.left, e.right);
-                }},
+                },
+                [](const Call& e) {
+                    return detail::parenthesize("call", e.callee);
+                },
+            },
             *expr);
     }
 
@@ -64,7 +68,12 @@ namespace lox::ast {
                     return detail::parenthesize("for", s.init, s.condition,
                                                 s.inc);
                 },
-                [](const Break&) { return detail::parenthesize("break"); },
+                [](const Return& s) {
+                    return detail::parenthesize(s.keyword.lexeme, s.val);
+                },
+                [](const Break& s) {
+                    return detail::parenthesize(s.keyword.lexeme);
+                },
                 [](const Expression& s) {
                     return detail::parenthesize("expr", s.expr);
                 },
@@ -73,6 +82,9 @@ namespace lox::ast {
                 },
                 [](const Var& s) {
                     return detail::parenthesize(s.name, s.init);
+                },
+                [](const Function& s) {
+                    return detail::parenthesize(s.name.lexeme);
                 },
             },
             *stmt);

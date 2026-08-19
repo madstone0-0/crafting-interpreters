@@ -12,7 +12,7 @@ namespace lox::ast {
 
     struct Assign {
         lox::lexer::Token name;
-        ExprPtr value;
+        ExprPtr val;
     };
 
     struct Binary {
@@ -52,8 +52,14 @@ namespace lox::ast {
         ExprPtr right;
     };
 
+    struct Call {
+        ExprPtr callee;
+        lox::lexer::Token paren;
+        std::vector<ExprPtr> args;
+    };
+
     using ExprVariant = std::variant<Assign, Binary, Unary, Ternary, Grouping,
-                                     Literal, Variable, Logical>;
+                                     Literal, Variable, Logical, Call>;
     struct Expr : ExprVariant {
         using ExprVariant::ExprVariant;
     };

@@ -19,6 +19,7 @@ namespace lox::ast {
         [](const lexer::BoolLiteral& e) {
             return std::string{e ? "true" : "false"};
         },
+        [](const lexer::Callable& e) { return e.name; },
         [](std::monostate) { return std::string{"nil"}; }};
 
     namespace detail {

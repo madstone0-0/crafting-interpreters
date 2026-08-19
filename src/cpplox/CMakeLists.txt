@@ -7,6 +7,8 @@ add_executable(
     main.cpp
     ${INCLUDE}/lox.hpp
     ${INCLUDE}/lox.cpp
+    ${INCLUDE}/literal.hpp
+    ${INCLUDE}/literal.cpp
     ${INCLUDE}/token.hpp
     ${INCLUDE}/lexer.hpp
     ${INCLUDE}/lexer.cpp

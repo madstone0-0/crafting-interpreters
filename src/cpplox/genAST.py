@@ -75,7 +75,7 @@ if __name__ == "__main__":
             dir,
             "Expr",
             [
-                "Assign : lox::lexer::Token name, Expr value",
+                "Assign : lox::lexer::Token name, Expr val",
                 "Binary : Expr left, lox::lexer::Token op, Expr right",
                 "Unary : lox::lexer::Token op, Expr right",
                 "Ternary : Expr left, lox::lexer::Token op1, Expr mid, lox::lexer::Token op2, Expr right",
@@ -83,6 +83,7 @@ if __name__ == "__main__":
                 "Literal : lox::lexer::Literal val",
                 "Variable : lox::lexer::Token name",
                 "Logical : Expr left, lox::lexer::Token op, Expr right",
+                "Call : Expr callee, lox::lexer::Token paren, std::vector<ExprPtr> args",
             ],
         )
         defineAST(
@@ -91,12 +92,14 @@ if __name__ == "__main__":
             [
                 "Block : std::vector<StmtPtr> stmts",
                 "Expression : ExprPtr expr",
+                "Function : lox::lexer::Token name, std::vector<lox::lexer::Token> params, std::vector<StmtPtr> body",
                 "If : ExprPtr condition, Stmt thenBr, Stmt elseBr",
                 "While : ExprPtr condition, Stmt body",
                 "For : Stmt init, ExprPtr condition, ExprPtr inc",
                 "Print : ExprPtr expr",
                 "Var : lox::lexer::Token name, ExprPtr init",
-                "Break : ",
+                "Break : lox::lexer::Token keyword",
+                "Return : lox::lexer::Token keyword,  ExprPtr val",
             ],
             [
                 "expr.hpp",

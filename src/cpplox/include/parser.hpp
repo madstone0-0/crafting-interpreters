@@ -1,8 +1,10 @@
 #pragma once
 
+#include <format>
 #include <functional>
 #include <stdexcept>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "ast.hpp"
@@ -11,10 +13,12 @@
 #include "lexer.hpp"
 #include "stmt.hpp"
 #include "token.hpp"
+#include "utils.hpp"
 
 namespace lox::parser {
     using ast::box;
     using Statements = std::vector<ast::StmtPtr>;
+    using Expressions = std::vector<ast::ExprPtr>;
 
     class Parser {
        private:
@@ -78,6 +82,8 @@ namespace lox::parser {
          */
         ast::StmtPtr varDecl();
 
+        ast::StmtPtr function(std::string_view kind);
+
         /**
          * @brief statement -> exprStmt | printStmt;
          */
@@ -93,6 +99,9 @@ namespace lox::parser {
          */
         ast::StmtPtr printStmt();
 
+        /**
+         * @brief breakStmt -> "break" ";" ;
+         */
         ast::StmtPtr breakStmt();
 
         /**
@@ -111,6 +120,11 @@ namespace lox::parser {
          * ";" expression? ")" statement ;
          */
         ast::StmtPtr forStmt();
+
+        /**
+         * @brief returnStmt -> "return" expression? ";" ;
+         */
+        ast::StmtPtr returnStmt();
 
         /**
          * @brief block -> "{" declaration* "}" ;
@@ -171,6 +185,16 @@ namespace lox::parser {
          * @brief unary -> ("!" | "-") unary | primary ;
          */
         ast::ExprPtr unary();
+
+        /**
+         * @brief arguments -> expression ( "," expression )* ;
+         */
+        ast::ExprPtr arguments(ast::ExprPtr&&);
+
+        /**
+         * @brief call -> primary ( "(" arguments? ")" )* ;
+         */
+        ast::ExprPtr call();
 
         /**
          * @brief primary -> STRING | NUMBER | "true" | "false" | "nil" | "("

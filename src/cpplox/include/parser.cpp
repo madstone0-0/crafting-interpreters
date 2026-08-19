@@ -1,11 +1,6 @@
 #include "parser.hpp"
 
-#include <variant>
-
 #include "expr.hpp"
-#include "stmt.hpp"
-#include "token.hpp"
-#include "utils.hpp"
 
 namespace lox::parser {
 
@@ -68,6 +63,7 @@ namespace lox::parser {
         using enum lexer::TokenType;
 
         try {
+            if (match(FUN)) return function("function");
             if (match(VAR)) return varDecl();
 
             return statement();
@@ -93,11 +89,38 @@ namespace lox::parser {
         });
     }
 
+    ast::StmtPtr Parser::function(std::string_view kind) {
+        using enum lexer::TokenType;
+
+        auto name = consume(IDENTIFER, std::format("Expect {} name", kind));
+        consume(LEFT_PAREN, std::format("Expect '(' after {} name.", kind));
+        lexer::Tokens params;
+        if (!check(RIGHT_PAREN)) {
+            do {
+                if (params.size() >= 255)
+                    error(peek(), "Cant have more than 255 parameters");
+
+                params.emplace_back(
+                    consume(IDENTIFER, "Expect parameter name"));
+            } while (match(COMMA));
+        }
+        consume(RIGHT_PAREN, "Expect ')' after parameters");
+
+        consume(LEFT_BRACE, std::format("Expect '{{' before {} body.", kind));
+        Statements body = block();
+        return box(ast::Function{
+            .name = name,
+            .params = std::move(params),
+            .body = std::move(body),
+        });
+    }
+
     ast::StmtPtr Parser::statement() {
         using enum lexer::TokenType;
         if (match(IF)) return ifStmt();
         if (match(WHILE)) return whileStmt();
         if (match(FOR)) return forStmt();
+        if (match(RETURN)) return returnStmt();
         if (match(BREAK)) return breakStmt();
         if (match(PRINT)) return printStmt();
         if (match(LEFT_BRACE)) return box(ast::Block{block()});
@@ -120,7 +143,7 @@ namespace lox::parser {
         if (loopDepth == 0) {
             error(kw, "'break' outside of a loop.");
         }
-        return box(ast::Break{});
+        return box(ast::Break{kw});
     }
 
     ast::StmtPtr Parser::printStmt() {
@@ -223,6 +246,22 @@ namespace lox::parser {
         return body;
     }
 
+    ast::StmtPtr Parser::returnStmt() {
+        using enum lexer::TokenType;
+        auto kw = prev();
+        ast::ExprPtr val{nullptr};
+
+        if (!check(SEMICOLON)) {
+            val = expression();
+        }
+
+        consume(SEMICOLON, "Expect ';' after return value.");
+        return box(ast::Return{
+            .keyword = kw,
+            .val = std::move(val),
+        });
+    }
+
     Statements Parser::block() {
         using enum lexer::TokenType;
         Statements stmts;
@@ -265,7 +304,7 @@ namespace lox::parser {
                 auto name = variable->name;
                 return box(ast::Assign{
                     .name = name,
-                    .value = std::move(val),
+                    .val = std::move(val),
                 });
             }
 
@@ -364,7 +403,44 @@ namespace lox::parser {
             });
         }
 
-        return primary();
+        return call();
+    }
+
+    ast::ExprPtr Parser::arguments(ast::ExprPtr&& callee) {
+        using enum lexer::TokenType;
+        Expressions args;
+
+        if (!check(RIGHT_PAREN)) {
+            do {
+                if (args.size() >= 255) {
+                    error(peek(), "Can't have more than 255 arguments.");
+                }
+                args.emplace_back(expression());
+            } while (match(COMMA));
+        }
+
+        auto paren = consume(RIGHT_PAREN, "Expect ')' after arguments");
+
+        return box(ast::Call{
+            .callee = std::move(callee),
+            .paren = paren,
+            .args = std::move(args),
+        });
+    }
+
+    ast::ExprPtr Parser::call() {
+        using enum lexer::TokenType;
+        auto expr = primary();
+
+        while (true) {
+            if (match(LEFT_PAREN)) {
+                expr = arguments(std::move(expr));
+            } else {
+                break;
+            }
+        }
+
+        return expr;
     }
 
     ast::ExprPtr Parser::primary() {

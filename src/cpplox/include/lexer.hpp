@@ -10,6 +10,7 @@
 #include <variant>
 #include <vector>
 
+#include "literal.hpp"
 #include "lox.hpp"
 #include "token.hpp"
 #include "utils.hpp"

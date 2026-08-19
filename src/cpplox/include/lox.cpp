@@ -4,6 +4,36 @@
 
 #include "ast.hpp"
 
+namespace {
+    bool isBalanced(const std::string& src) {
+        using enum lox::lexer::TokenType;
+
+        auto savedError = lox::Lox::hadError;
+
+        lox::lexer::Lexer lex{src};
+        const auto& tokens = lex.scanTokens();
+
+        lox::Lox::hadError = savedError;
+
+        int depth = 0;
+        for (const auto& tok : tokens) {
+            switch (tok.type) {
+                case LEFT_PAREN:
+                case LEFT_BRACE:
+                    depth++;
+                    break;
+                case RIGHT_PAREN:
+                case RIGHT_BRACE:
+                    depth--;
+                    break;
+                default:
+                    break;
+            }
+        }
+        return depth <= 0;
+    }
+}
+
 namespace lox {
     bool Lox::hadError = false;
     bool Lox::hadRuntimeError = false;
@@ -28,7 +58,7 @@ namespace lox {
         if (tok.type == lexer::TokenType::EOF_) {
             report(tok.line, " at end", msg);
         } else {
-            report(tok.line, std::format(" at '{}'", tok.lexeme), msg);
+            report(tok.line, std::format("at '{}'", tok.lexeme), msg);
         }
     }
 
@@ -37,7 +67,7 @@ namespace lox {
         hadRuntimeError = true;
     }
 
-    void Lox::run(std::string_view in) {
+    void Lox::run(std::string_view in, bool repl) {
         lexer::Lexer lexer{in};
         auto tokens = lexer.scanTokens();
         parser::Parser parser{tokens};
@@ -48,7 +78,7 @@ namespace lox {
 #ifdef DEBUG
         for (const auto& tok : tokens) std::println("{}", std::string{tok});
 #endif
-        interpreter.interpret(stmts);
+        interpreter.interpret(std::move(stmts), repl);
     }
 
     int Lox::runFile(std::string_view path) {
@@ -67,6 +97,8 @@ namespace lox {
 
         std::string buf;
 
+        std::println(R"(CPPLox v0.1.0
+Type ".exit" to exit the REPL)");
         while (true) {
             const char* prompt = buf.empty() ? "> " : "...";
             const char* input = rx.input(prompt);
@@ -84,8 +116,13 @@ namespace lox {
             if (buf.empty() && line == ".exit") break;
 
             buf += line;
+
+            if (!isBalanced(buf)) {
+                continue;
+            }
+
             rx.history_add(buf);
-            run(buf);
+            run(buf, true);
             buf.clear();
             hadError = false;
             hadRuntimeError = false;

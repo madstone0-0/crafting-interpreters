@@ -1,6 +1,11 @@
 #pragma once
 
+#include <algorithm>
+#include <chrono>
+#include <cmath>
+#include <format>
 #include <functional>
+#include <memory>
 #include <optional>
 #include <print>
 #include <stdexcept>
@@ -10,6 +15,7 @@
 #include "environment.hpp"
 #include "error.hpp"
 #include "expr.hpp"
+#include "literal.hpp"
 #include "lox.hpp"
 #include "parser.hpp"
 #include "stmt.hpp"
@@ -19,7 +25,10 @@ namespace lox::interpreter {
 
     class Interpreter {
        private:
-        environment::EnvPtr env{std::make_shared<environment::Environment>()};
+        environment::EnvPtr globals{
+            std::make_shared<environment::Environment>()};
+        environment::EnvPtr env{globals};
+        parser::Statements stmts;
 
         bool isTruthy(const lexer::Literal&);
 
@@ -57,6 +66,7 @@ namespace lox::interpreter {
         lexer::Literal eval(const ast::Block&, const environment::EnvPtr&);
         lexer::Literal eval(const ast::If&);
         lexer::Literal eval(const ast::While&);
+        lexer::Literal eval(const ast::Function&);
 
         lexer::Literal visit(const ast::StmtPtr&);
 
@@ -64,13 +74,16 @@ namespace lox::interpreter {
         lexer::Literal eval(const ast::Binary&);
         lexer::Literal eval(const ast::Ternary&);
         lexer::Literal eval(const ast::Logical&);
+        lexer::Literal eval(const ast::Call&);
 
         lexer::Literal visit(const ast::ExprPtr&);
 
-        void exec(const ast::StmtPtr&);
+        void exec(const ast::StmtPtr&, bool repl= false);
 
        public:
-        void interpret(const parser::Statements&);
+        Interpreter();
+
+        void interpret(parser::Statements, bool repl = false);
     };
 
 };
