@@ -4,7 +4,8 @@ declaration -> varDecl | statement ;
 
 varDecl-> "var" IDENTIFIER ( "=" expression )? ";" ;
 
-statement -> exprStmt | printStmt | ifStmt | whileStmt | forStmt |  block;
+statement -> exprStmt | printStmt | ifStmt | whileStmt | forStmt | breakStmt |  block;
+breakStmt -> "break" ";" ;
 ifStmt -> "if" "(" expression ")" statement ( "else" statement )? ;
 whileStmt -> "while" "(" expression ")" statement  ;
 forStmt -> "for" "(" ( varDecl | exprStmt | ";" ) expression? ";" expression? ")" statement ;

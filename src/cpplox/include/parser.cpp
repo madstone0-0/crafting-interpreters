@@ -5,6 +5,7 @@
 #include "expr.hpp"
 #include "stmt.hpp"
 #include "token.hpp"
+#include "utils.hpp"
 
 namespace lox::parser {
 
@@ -97,6 +98,7 @@ namespace lox::parser {
         if (match(IF)) return ifStmt();
         if (match(WHILE)) return whileStmt();
         if (match(FOR)) return forStmt();
+        if (match(BREAK)) return breakStmt();
         if (match(PRINT)) return printStmt();
         if (match(LEFT_BRACE)) return box(ast::Block{block()});
         return exprStmt();
@@ -108,6 +110,17 @@ namespace lox::parser {
         auto expr = expression();
         consume(SEMICOLON, "Expect ';' after value");
         return box(ast::Expression{std::move(expr)});
+    }
+
+    ast::StmtPtr Parser::breakStmt() {
+        using enum lexer::TokenType;
+
+        auto kw = prev();
+        consume(SEMICOLON, "Expect ';' after 'break'.");
+        if (loopDepth == 0) {
+            error(kw, "'break' outside of a loop.");
+        }
+        return box(ast::Break{});
     }
 
     ast::StmtPtr Parser::printStmt() {
@@ -143,6 +156,8 @@ namespace lox::parser {
         auto cond = expression();
         consume(RIGHT_PAREN, "Expect ')' after while loop.");
 
+        loopDepth++;
+        utils::ScopeGuard guard{[this] { loopDepth--; }};
         auto body = statement();
 
         return box(ast::While{
@@ -172,6 +187,8 @@ namespace lox::parser {
         if (!check(RIGHT_PAREN)) inc = expression();
         consume(RIGHT_PAREN, "Expect ')' after for clauses.");
 
+        loopDepth++;
+        utils::ScopeGuard guard{[this] { loopDepth--; }};
         // Desugaring basically converts the for loop into it's equivalent
         // while loop, i.e.:
         // {

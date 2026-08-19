@@ -45,8 +45,10 @@ namespace lox::ast {
         ExprPtr init;
     };
 
+    struct Break {};
+
     using StmtVariant =
-        std::variant<Block, Expression, If, While, For, Print, Var>;
+        std::variant<Block, Expression, If, While, For, Print, Var, Break>;
     struct Stmt : StmtVariant {
         using StmtVariant::StmtVariant;
     };

@@ -20,4 +20,5 @@ namespace lox::error {
         , token{std::move(tok)} {}
     };
 
+    struct BreakError : std::exception {};
 }

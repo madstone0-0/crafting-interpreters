@@ -34,9 +34,9 @@ namespace lox::ast {
 
     }
 
-    std::string astPrinter(const StmtPtr&);
+    std::string astPrinter(const StmtPtr&, int depth = 0);
 
-    std::string astPrinter(const ExprPtr&);
+    std::string astPrinter(const ExprPtr&, int depth = 0);
 
     // std::string rpnAstPrinter(const ExprPtr&);
 }

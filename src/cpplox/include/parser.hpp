@@ -20,6 +20,7 @@ namespace lox::parser {
        private:
         lexer::Tokens tokens;
         size_t curr{};
+        size_t loopDepth{};
 
         error::ParseError error(const lexer::Token&, const std::string&);
 
@@ -91,6 +92,8 @@ namespace lox::parser {
          * @brief printStmt -> "print" expression ";" ;
          */
         ast::StmtPtr printStmt();
+
+        ast::StmtPtr breakStmt();
 
         /**
          * @brief ifStmt -> "if" "(" expression ")" statement ( "else"

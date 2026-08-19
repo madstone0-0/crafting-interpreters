@@ -71,13 +71,13 @@ namespace lox::interpreter {
     }
 
     lexer::Literal Interpreter::eval(const ast::While& s) {
-        while (isTruthy(visit(s.condition))) {
-            exec(s.body);
+        try {
+            while (isTruthy(visit(s.condition))) {
+                exec(s.body);
+            }
+        } catch (const error::BreakError&) {
+            // Stop looping
         }
-        return std::monostate{};
-    }
-
-    lexer::Literal Interpreter::eval(const ast::For&) {
         return std::monostate{};
     }
 
@@ -88,7 +88,13 @@ namespace lox::interpreter {
                 [this](const ast::Expression& s) { return visit(s.expr); },
                 [this](const ast::If& s) { return eval(s); },
                 [this](const ast::While& s) { return eval(s); },
-                [this](const ast::For& s) { return eval(s); },
+                [](const ast::For&) {
+                    return lexer::Literal{std::monostate{}};
+                },
+                [](const ast::Break&) {
+                    throw error::BreakError{};
+                    return lexer::Literal{std::monostate{}};
+                },
                 [this](const ast::Var& s) { return eval(s); },
                 [this](const ast::Block& s) {
                     return eval(
@@ -238,11 +244,8 @@ namespace lox::interpreter {
 
     void Interpreter::exec(const ast::StmtPtr& stmt) {
         if (!stmt) return;
-        auto res = visit(stmt);
 
-#ifdef DEBUG
-        std::println("{}", ast::astPrinter(stmt));
-#endif
+        auto res = visit(stmt);
         if (std::holds_alternative<ast::Expression>(*stmt)) {
             std::println("{}", std::visit(ast::LiteralPrinter, res));
         }
@@ -250,10 +253,14 @@ namespace lox::interpreter {
 
     void Interpreter::interpret(const parser::Statements& stmts) {
         try {
-            for (const auto& stmt : stmts) exec(stmt);
+            for (const auto& stmt : stmts) {
+#ifdef DEBUG
+                if (stmt) std::println("{}", ast::astPrinter(stmt));
+#endif
+                exec(stmt);
+            }
         } catch (const error::RuntimeError& e) {
             lox::Lox::runtimeError(e);
         }
     }
-
 }

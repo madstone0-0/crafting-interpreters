@@ -1,9 +1,11 @@
 #include "ast.hpp"
 
+#include <cstddef>
+
 namespace lox::ast {
 
-    std::string astPrinter(const ExprPtr& expr) {
-        if (!expr) return "no expression";
+    std::string astPrinter(const ExprPtr& expr, int depth) {
+        if (!expr) return "";
 
         return std::visit(
             utils::overload{
@@ -35,15 +37,21 @@ namespace lox::ast {
             *expr);
     }
 
-    std::string astPrinter(const StmtPtr& stmt) {
+    std::string astPrinter(const StmtPtr& stmt, int depth) {
+        if (!stmt) return "";
+
+        const std::string pad(static_cast<size_t>(depth * 2), ' ');
+
         return std::visit(
             utils::overload{
-                [](const Block& s) {
-                    std::string res;
+                [&](const Block& s) {
+                    std::string res = "(block\n";
                     for (const auto& st : s.stmts) {
-                        res += +"\t" + astPrinter(st) + "\n";
+                        if (!st) continue;
+                        res += pad + "  " + astPrinter(st, depth + 1) + "\n";
                     }
-                    return std::format("( block\t\n{})", res);
+                    res += pad + ")";
+                    return res;
                 },
                 [](const If& s) {
                     return detail::parenthesize("if", s.condition, s.thenBr,
@@ -56,6 +64,7 @@ namespace lox::ast {
                     return detail::parenthesize("for", s.init, s.condition,
                                                 s.inc);
                 },
+                [](const Break&) { return detail::parenthesize("break"); },
                 [](const Expression& s) {
                     return detail::parenthesize("expr", s.expr);
                 },

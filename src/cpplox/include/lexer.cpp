@@ -13,7 +13,7 @@ namespace lox::lexer {
         {"print", TokenType::PRINT}, {"return", TokenType::RETURN},
         {"super", TokenType::SUPER}, {"this", TokenType::THIS},
         {"var", TokenType::VAR},     {"while", TokenType::WHILE},
-
+        {"break", TokenType::BREAK},
     };
 
     bool Lexer::isDigit(char c) { return c >= '0' && c <= '9'; }
