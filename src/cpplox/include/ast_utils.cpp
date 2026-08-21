@@ -1,8 +1,63 @@
-#include "ast.hpp"
+#include "ast_utils.hpp"
 
 #include <cstddef>
+#include <format>
 
 namespace lox::ast {
+    std::string astPrinter(const lexer::Tokens& tokens, int depth) {
+        std::string res;
+
+        for (size_t i{}; i < tokens.size(); ++i) {
+            if (i != 0) {
+                res += ' ';
+            }
+
+            res += tokens[i].lexeme;
+        }
+
+        return res;
+    }
+
+    std::string astPrinter(const std::vector<StmtPtr>& stmts, int depth) {
+        std::string res;
+
+        for (const auto& stmt : stmts) {
+            if (!stmt) continue;
+
+            if (!res.empty()) res += ' ';
+
+            res += astPrinter(stmt, depth);
+        }
+
+        return res;
+    }
+
+    std::string astPrinter(const std::vector<ExprPtr>& exprs, int depth) {
+        std::string res;
+
+        for (const auto& e : exprs) {
+            if (!e) continue;
+
+            if (!res.empty()) res += ' ';
+
+            res += astPrinter(e, depth);
+        }
+
+        return res;
+    }
+
+    std::string astPrinter(const lexer::Tokens& tokens,
+                           const std::vector<StmtPtr>& stmts, int depth) {
+        std::string res = astPrinter(tokens, depth);
+        const auto body = astPrinter(stmts, depth);
+
+        if (!res.empty() && !body.empty()) {
+            res += ' ';
+        }
+
+        res += body;
+        return res;
+    }
 
     std::string astPrinter(const ExprPtr& expr, int depth) {
         if (!expr) return "";
@@ -28,16 +83,16 @@ namespace lox::ast {
                 [](const Unary& e) {
                     return detail::parenthesize(e.op.lexeme, e.right);
                 },
-                [](const Variable& e) {
-                    return detail::parenthesize(e.name.lexeme);
-                },
+                [](const Variable& e) { return e.name.lexeme; },
                 [](const Logical& e) {
                     return detail::parenthesize(e.op.lexeme, e.left, e.right);
                 },
                 [](const Call& e) {
-                    return detail::parenthesize("call", e.callee);
+                    return detail::parenthesize("call", e.callee, e.args);
                 },
-            },
+                [](const Lambda& e) {
+                    return detail::parenthesize("lambda", e.params, e.body);
+                }},
             *expr);
     }
 
@@ -48,13 +103,23 @@ namespace lox::ast {
 
         return std::visit(
             utils::overload{
-                [&](const Block& s) {
+                [depth](const Block& s) {
                     std::string res = "(block\n";
                     for (const auto& st : s.stmts) {
-                        if (!st) continue;
-                        res += pad + "  " + astPrinter(st, depth + 1) + "\n";
+                        if (!st) {
+                            continue;
+                        }
+                        const std::string child = astPrinter(st, depth + 1);
+                        res += std::string(
+                            static_cast<std::size_t>((depth + 1) * 2), ' ');
+                        res += child;
+                        res += '\n';
                     }
-                    res += pad + ")";
+
+                    res += std::string(static_cast<std::size_t>(depth * 2),
+                                       ' ');
+                    res += ')';
+
                     return res;
                 },
                 [](const If& s) {
@@ -84,7 +149,8 @@ namespace lox::ast {
                     return detail::parenthesize(s.name, s.init);
                 },
                 [](const Function& s) {
-                    return detail::parenthesize(s.name.lexeme);
+                    return detail::parenthesize(s.name.lexeme, s.params,
+                                                s.body);
                 },
             },
             *stmt);

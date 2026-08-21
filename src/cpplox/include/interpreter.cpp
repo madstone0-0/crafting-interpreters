@@ -287,6 +287,33 @@ namespace lox::interpreter {
                       args);
     }
 
+    lexer::Literal Interpreter::eval(const ast::Lambda& e) {
+        return lexer::CallableLiteral{
+            .name = "<fn anon>",
+            .arity_ = e.params.size(),
+            .f = [this, &e](const environment::EnvPtr& env,
+                            const lexer::Literals& args) -> lexer::Literal {
+                for (size_t i{}; i < e.params.size(); ++i) {
+                    env->define(e.params.at(i).lexeme, args.at(i));
+                }
+
+                auto prevEnv = this->env;
+                utils::ScopeGuard guard{
+                    [this, prevEnv] { this->env = prevEnv; }};
+                this->env = env;
+
+                try {
+                    for (const auto& block : e.body) {
+                        exec(block);
+                    }
+                } catch (const error::Return& val) {
+                    return val.val;
+                }
+                return std::monostate{};
+            },
+        };
+    }
+
     lexer::Literal Interpreter::visit(const ast::ExprPtr& expr) {
         return std::visit(
             utils::overload{
@@ -302,6 +329,7 @@ namespace lox::interpreter {
                 [this](const ast::Variable& e) { return env->get(e.name); },
                 [this](const ast::Logical& e) { return eval(e); },
                 [this](const ast::Call& e) { return eval(e); },
+                [this](const ast::Lambda& e) { return eval(e); },
                 [](const ast::Literal& e) { return e.val; },
             },
             *expr);

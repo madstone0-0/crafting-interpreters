@@ -9,9 +9,7 @@
 
 #include "ast.hpp"
 #include "error.hpp"
-#include "expr.hpp"
 #include "lexer.hpp"
-#include "stmt.hpp"
 #include "token.hpp"
 #include "utils.hpp"
 
@@ -32,11 +30,15 @@ namespace lox::parser {
 
         lexer::Token peek();
 
+        lexer::Token peekNext();
+
         lexer::Token advance();
 
         lexer::Token prev();
 
         bool check(lexer::TokenType type);
+
+        bool checkNext(lexer::TokenType type);
 
         void sync();
 
@@ -82,6 +84,12 @@ namespace lox::parser {
          */
         ast::StmtPtr varDecl();
 
+        std::pair<lexer::Tokens, Statements> functionBody(
+            std::string_view kind);
+
+        /**
+         * @brief function -> IDENTIFIER "(" parameters? ")" block ;
+         */
         ast::StmtPtr function(std::string_view kind);
 
         /**
@@ -198,9 +206,14 @@ namespace lox::parser {
 
         /**
          * @brief primary -> STRING | NUMBER | "true" | "false" | "nil" | "("
-         * expression ")" ;
+         * expression ")" | IDENTIFIER | lambda ;
          */
         ast::ExprPtr primary();
+
+        /**
+         * @brief lambda -> "fun" "(" parameters? ")" block;
+         */
+        ast::ExprPtr lambda();
 
        public:
         Parser(lexer::Tokens tok)

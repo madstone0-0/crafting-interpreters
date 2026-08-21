@@ -1,6 +1,6 @@
 #include "parser.hpp"
 
-#include "expr.hpp"
+#include <utility>
 
 namespace lox::parser {
 
@@ -14,6 +14,11 @@ namespace lox::parser {
 
     lexer::Token Parser::peek() { return tokens.at(curr); }
 
+    lexer::Token Parser::peekNext() {
+        if (peek().type == lexer::TokenType::EOF_) return peek();
+        return tokens.at(curr + 1);
+    }
+
     lexer::Token Parser::advance() {
         if (!isAtEnd()) curr++;
         return prev();
@@ -22,6 +27,10 @@ namespace lox::parser {
     bool Parser::check(lexer::TokenType type) {
         if (isAtEnd()) return false;
         return peek().type == type;
+    }
+
+    bool Parser::checkNext(lexer::TokenType type) {
+        return peekNext().type == type;
     }
 
     lexer::Token Parser::prev() { return tokens.at(curr - 1); }
@@ -45,6 +54,7 @@ namespace lox::parser {
                 case WHILE:
                 case PRINT:
                 case RETURN:
+                case BREAK:
                     return;
             }
 
@@ -63,7 +73,10 @@ namespace lox::parser {
         using enum lexer::TokenType;
 
         try {
-            if (match(FUN)) return function("function");
+            if (check(FUN) && checkNext(IDENTIFER)) {
+                advance();
+                return function("function");
+            }
             if (match(VAR)) return varDecl();
 
             return statement();
@@ -89,10 +102,10 @@ namespace lox::parser {
         });
     }
 
-    ast::StmtPtr Parser::function(std::string_view kind) {
+    std::pair<lexer::Tokens, Statements> Parser::functionBody(
+        std::string_view kind) {
         using enum lexer::TokenType;
 
-        auto name = consume(IDENTIFER, std::format("Expect {} name", kind));
         consume(LEFT_PAREN, std::format("Expect '(' after {} name.", kind));
         lexer::Tokens params;
         if (!check(RIGHT_PAREN)) {
@@ -108,6 +121,18 @@ namespace lox::parser {
 
         consume(LEFT_BRACE, std::format("Expect '{{' before {} body.", kind));
         Statements body = block();
+
+        return {
+            std::move(params),
+            std::move(body),
+        };
+    }
+
+    ast::StmtPtr Parser::function(std::string_view kind) {
+        using enum lexer::TokenType;
+
+        auto name = consume(IDENTIFER, std::format("Expect {} name", kind));
+        auto [params, body] = functionBody(kind);
         return box(ast::Function{
             .name = name,
             .params = std::move(params),
@@ -460,7 +485,17 @@ namespace lox::parser {
             return box(ast::Grouping{.expr = std::move(expr)});
         }
 
+        if (match(FUN)) return lambda();
+
         throw error(peek(), "Expect expression");
+    }
+
+    ast::ExprPtr Parser::lambda() {
+        auto [params, body] = functionBody("function");
+        return box(ast::Lambda{
+            .params = std::move(params),
+            .body = std::move(body),
+        });
     }
 
     Statements Parser::parse() {

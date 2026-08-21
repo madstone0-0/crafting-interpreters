@@ -13,7 +13,8 @@ add_executable(
     ${INCLUDE}/lexer.hpp
     ${INCLUDE}/lexer.cpp
     ${INCLUDE}/ast.hpp
-    ${INCLUDE}/ast.cpp
+    ${INCLUDE}/ast_utils.hpp
+    ${INCLUDE}/ast_utils.cpp
     ${INCLUDE}/parser.hpp
     ${INCLUDE}/parser.cpp
     ${INCLUDE}/interpreter.hpp

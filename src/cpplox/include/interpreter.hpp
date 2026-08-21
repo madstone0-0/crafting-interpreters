@@ -12,13 +12,13 @@
 #include <type_traits>
 #include <variant>
 
+#include "ast.hpp"
+#include "ast_utils.hpp"
 #include "environment.hpp"
 #include "error.hpp"
-#include "expr.hpp"
 #include "literal.hpp"
 #include "lox.hpp"
 #include "parser.hpp"
-#include "stmt.hpp"
 #include "token.hpp"
 
 namespace lox::interpreter {
@@ -75,10 +75,11 @@ namespace lox::interpreter {
         lexer::Literal eval(const ast::Ternary&);
         lexer::Literal eval(const ast::Logical&);
         lexer::Literal eval(const ast::Call&);
+        lexer::Literal eval(const ast::Lambda&);
 
         lexer::Literal visit(const ast::ExprPtr&);
 
-        void exec(const ast::StmtPtr&, bool repl= false);
+        void exec(const ast::StmtPtr&, bool repl = false);
 
        public:
         Interpreter();
