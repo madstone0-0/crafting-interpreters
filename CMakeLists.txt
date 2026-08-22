@@ -35,6 +35,7 @@ endif()
 check_cxx_compiler_flag("-freflection" HAS_REFLECTION)
 if(HAS_REFLECTION)
     add_compile_options(-freflection)
+    add_definitions(-DHAS_REFLECTION)
 endif()
 
 set(CMAKE_CXX_FLAGS_DEBUG "-ggdb -fsanitize=address,undefined,leak")

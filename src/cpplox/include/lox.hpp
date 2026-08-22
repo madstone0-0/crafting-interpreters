@@ -8,9 +8,10 @@
 #include <string_view>
 
 #include "ast.hpp"
-#include "interpreter.hpp"
+#include "interpreter_fwd.hpp"
 #include "lexer.hpp"
 #include "parser.hpp"
+#include "resolver.hpp"
 #include "token.hpp"
 #include "utils.hpp"
 

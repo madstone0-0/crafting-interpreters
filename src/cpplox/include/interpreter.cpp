@@ -1,11 +1,5 @@
 #include "interpreter.hpp"
 
-#include <format>
-#include <memory>
-
-#include "environment.hpp"
-#include "literal.hpp"
-
 namespace lox::interpreter {
 
     bool Interpreter::isTruthy(const lexer::Literal& l) {
@@ -31,6 +25,16 @@ namespace lox::interpreter {
                 }
             },
             a, b);
+    }
+
+    lexer::Literal Interpreter::lookupVar(const lexer::Token& tok,
+                                          const ast::Expr& e) {
+        auto itr = locals.find(&e);
+        if (itr != locals.end()) {
+            return env->getAt(itr->second, tok.lexeme);
+        } else {
+            return globals->get(tok);
+        }
     }
 
     lexer::Literal Interpreter::eval(const ast::Print& s) {
@@ -85,7 +89,7 @@ namespace lox::interpreter {
         auto f = lexer::CallableLiteral{
             .name = std::format("<fn {}>", s.name.lexeme),
             .arity_ = s.params.size(),
-            .closure = std::make_shared<environment::Environment>(env),
+            .closure = env,
             .f = [this, &s](const environment::EnvPtr& env,
                             const lexer::Literals& args) -> lexer::Literal {
                 for (size_t i{}; i < s.params.size(); ++i) {
@@ -291,6 +295,7 @@ namespace lox::interpreter {
         return lexer::CallableLiteral{
             .name = "<fn anon>",
             .arity_ = e.params.size(),
+            .closure = env,
             .f = [this, &e](const environment::EnvPtr& env,
                             const lexer::Literals& args) -> lexer::Literal {
                 for (size_t i{}; i < e.params.size(); ++i) {
@@ -315,18 +320,28 @@ namespace lox::interpreter {
     }
 
     lexer::Literal Interpreter::visit(const ast::ExprPtr& expr) {
+        // if (!expr) return std::monostate{}; // Maybe... we'll see
+        const auto& self = *expr;
+
         return std::visit(
             utils::overload{
-                [this](const ast::Assign& e) {
+                [this, &self](const ast::Assign& e) {
                     auto val = visit(e.val);
-                    env->assign(e.name, val);
+                    auto itr = locals.find(&self);
+                    if (itr != locals.end()) {
+                        env->assignAt(itr->second, e.name, val);
+                    } else {
+                        globals->assign(e.name, val);
+                    }
                     return val;
                 },
                 [this](const ast::Binary& e) { return eval(e); },
                 [this](const ast::Unary& e) { return eval(e); },
                 [this](const ast::Ternary& e) { return eval(e); },
                 [this](const ast::Grouping& e) { return visit(e.expr); },
-                [this](const ast::Variable& e) { return env->get(e.name); },
+                [this, &self](const ast::Variable& e) {
+                    return lookupVar(e.name, self);
+                },
                 [this](const ast::Logical& e) { return eval(e); },
                 [this](const ast::Call& e) { return eval(e); },
                 [this](const ast::Lambda& e) { return eval(e); },
@@ -446,6 +461,10 @@ namespace lox::interpreter {
         } catch (const error::RuntimeError& e) {
             lox::Lox::runtimeError(e);
         }
+    }
+
+    void Interpreter::resolve(const ast::Expr& e, int depth) {
+        locals[&e] = depth;
     }
 
 }

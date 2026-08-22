@@ -23,13 +23,13 @@ namespace lox::lexer {
 
     using Literals = std::vector<Literal>;
 
-    using CallableFunc =
-        std::function<lexer::Literal(const environment::EnvPtr&, const Literals&)>;
+    using CallableFunc = std::function<lexer::Literal(
+        const environment::EnvPtr&, const Literals&)>;
 
     struct Callable {
         std::string name;
         size_t arity_{};
-        environment::EnvPtr closure{nullptr};
+        environment::EnvPtr closure;
         CallableFunc f;
 
         bool operator==(const Callable&) const { return false; }

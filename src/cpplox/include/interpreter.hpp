@@ -22,11 +22,13 @@
 #include "token.hpp"
 
 namespace lox::interpreter {
+    using Locals = std::unordered_map<const ast::Expr*, int>;
 
     class Interpreter {
        private:
         environment::EnvPtr globals{
             std::make_shared<environment::Environment>()};
+        Locals locals;
         environment::EnvPtr env{globals};
         parser::Statements stmts;
 
@@ -61,6 +63,8 @@ namespace lox::interpreter {
             return f(std::get<T>(a), std::get<T>(b));
         }
 
+        lexer::Literal lookupVar(const lexer::Token& tok, const ast::Expr& e);
+
         lexer::Literal eval(const ast::Print&);
         lexer::Literal eval(const ast::Var&);
         lexer::Literal eval(const ast::Block&, const environment::EnvPtr&);
@@ -85,6 +89,8 @@ namespace lox::interpreter {
         Interpreter();
 
         void interpret(parser::Statements, bool repl = false);
+
+        void resolve(const ast::Expr&, int);
     };
 
 };

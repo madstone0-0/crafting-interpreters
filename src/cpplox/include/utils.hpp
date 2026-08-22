@@ -41,6 +41,7 @@ namespace lox::utils {
         rtrim(s);
     }
 
+#ifdef HAS_REFLECTION
     template <typename T>
         requires std::is_enum_v<T>
     constexpr std::string enumToString(T v) {
@@ -53,6 +54,13 @@ namespace lox::utils {
         }
         return res;
     }
+#else
+    template <typename T>
+        requires std::is_enum_v<T>
+    constexpr std::string enumToString(T v) {
+        return std::to_string(static_cast<uint8_t>(v));
+    }
+#endif
 
     template <class... Ts>
     struct overload : Ts... {

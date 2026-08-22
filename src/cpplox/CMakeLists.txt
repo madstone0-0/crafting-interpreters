@@ -21,5 +21,7 @@ add_executable(
     ${INCLUDE}/interpreter.cpp
     ${INCLUDE}/environment.hpp
     ${INCLUDE}/environment.cpp
+    ${INCLUDE}/resolver.hpp
+    ${INCLUDE}/resolver.cpp
 )
 target_link_libraries(cpplox Boost::program_options replxx)

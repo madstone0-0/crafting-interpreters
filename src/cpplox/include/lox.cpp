@@ -2,7 +2,7 @@
 
 #include <print>
 
-#include "ast.hpp"
+#include "interpreter.hpp"
 
 namespace {
     bool isBalanced(const std::string& src) {
@@ -72,6 +72,10 @@ namespace lox {
         auto tokens = lexer.scanTokens();
         parser::Parser parser{tokens};
         auto stmts = parser.parse();
+
+        resolver::Resolver resolver{
+            std::experimental::make_observer(&interpreter)};
+        resolver.resolve(stmts);
 
         if (hadError) return;
 
