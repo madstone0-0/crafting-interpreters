@@ -3,23 +3,34 @@
 namespace lox::resolver {
     void Resolver::beginScope() { scopes.emplace_back(); }
 
-    void Resolver::endScope() { scopes.pop_back(); }
+    void Resolver::endScope() {
+        for (const auto& [name, info] : scopes.back()) {
+            if (!info.used)
+                lox::Lox::warning(info.tok, "Local variable not used.");
+        }
+        scopes.pop_back();
+    }
 
     void Resolver::declare(const lexer::Token& tok) {
         if (scopes.empty()) return;
 
         auto& scope = scopes.back();
         if (scope.contains(tok.lexeme))
-            lox::Lox::error(tok,
-                            "Already a variable with this namen this scope.");
+            lox::Lox::error(
+                tok, "Already a variable with this name in this scope.");
 
-        scope.emplace(tok.lexeme, false);
+        scope.emplace(tok.lexeme, VarInfo{
+                                      .tok = tok,
+                                      .defined = false,
+                                      .used = false,
+                                      .idx = scope.size(),
+                                  });
         // scope[tok.lexeme] = false;
     }
 
     void Resolver::define(const lexer::Token& tok) {
         if (scopes.empty()) return;
-        scopes.back()[tok.lexeme] = true;
+        scopes.back()[tok.lexeme].defined = true;
     }
 
     void Resolver::eval(const ast::Var& s) {
@@ -93,7 +104,8 @@ namespace lox::resolver {
         if (!scopes.empty()) {
             const auto& scope = scopes.back();
             auto itr = scope.find(e.name.lexeme);
-            if (itr != scope.end() && !itr->second) {
+            auto found = itr != scope.end();
+            if (found && !itr->second.defined) {
                 lox::Lox::error(
                     e.name,
                     "Can't read local variable in its own initializer");
@@ -133,8 +145,11 @@ namespace lox::resolver {
 
     void Resolver::resolveLocal(const ast::Expr& e, const lexer::Token& tok) {
         for (int i = static_cast<int>(scopes.size()) - 1; i >= 0; --i) {
-            if (scopes.at(i).contains(tok.lexeme)) {
-                interp->resolve(e, static_cast<int>(scopes.size()) - 1 - i);
+            if (auto& scope = scopes.at(i); scope.contains(tok.lexeme)) {
+                auto& var = scope[tok.lexeme];
+                interp->resolve(e, static_cast<int>(scopes.size()) - 1 - i,
+                                var.idx);
+                var.used = true;
                 return;
             }
         }

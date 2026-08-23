@@ -31,7 +31,8 @@ namespace lox::interpreter {
                                           const ast::Expr& e) {
         auto itr = locals.find(&e);
         if (itr != locals.end()) {
-            return env->getAt(itr->second, tok.lexeme);
+            const auto& [depth, idx] = itr->second;
+            return env->getAt(depth, idx);
         } else {
             return globals->get(tok);
         }
@@ -329,7 +330,8 @@ namespace lox::interpreter {
                     auto val = visit(e.val);
                     auto itr = locals.find(&self);
                     if (itr != locals.end()) {
-                        env->assignAt(itr->second, e.name, val);
+                        const auto& [depth, idx] = itr->second;
+                        env->assignAt(depth, idx, val);
                     } else {
                         globals->assign(e.name, val);
                     }
@@ -463,8 +465,11 @@ namespace lox::interpreter {
         }
     }
 
-    void Interpreter::resolve(const ast::Expr& e, int depth) {
-        locals[&e] = depth;
+    void Interpreter::resolve(const ast::Expr& e, int depth, size_t idx) {
+        locals[&e] = Resolved{
+            .depth = depth,
+            .idx = idx,
+        };
     }
 
 }

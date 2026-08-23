@@ -50,6 +50,10 @@ namespace lox {
         hadError = true;
     }
 
+    void Lox::warn(size_t line, std::string_view where, std::string_view msg) {
+        std::println("[line {}] Warning {}: {}", line, where, msg);
+    }
+
     void Lox::error(size_t line, std::string_view msg) {
         report(line, "", msg);
     }
@@ -59,6 +63,14 @@ namespace lox {
             report(tok.line, " at end", msg);
         } else {
             report(tok.line, std::format("at '{}'", tok.lexeme), msg);
+        }
+    }
+
+    void Lox::warning(const lexer::Token& tok, std::string_view msg) {
+        if (tok.type == lexer::TokenType::EOF_) {
+            warn(tok.line, " at end", msg);
+        } else {
+            warn(tok.line, std::format("at '{}'", tok.lexeme), msg);
         }
     }
 

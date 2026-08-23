@@ -22,7 +22,11 @@
 #include "token.hpp"
 
 namespace lox::interpreter {
-    using Locals = std::unordered_map<const ast::Expr*, int>;
+    struct Resolved {
+        int depth{};
+        size_t idx{};
+    };
+    using Locals = std::unordered_map<const ast::Expr*, Resolved>;
 
     class Interpreter {
        private:
@@ -90,7 +94,7 @@ namespace lox::interpreter {
 
         void interpret(parser::Statements, bool repl = false);
 
-        void resolve(const ast::Expr&, int);
+        void resolve(const ast::Expr&, int, size_t);
     };
 
 };

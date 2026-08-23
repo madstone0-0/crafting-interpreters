@@ -18,6 +18,7 @@ namespace lox::environment {
 
     void Environment::define(const std::string& name,
                              const lexer::Literal& val) {
+        locals.emplace_back(val);
         values.insert({name, val});
     }
 
@@ -31,8 +32,8 @@ namespace lox::environment {
             std::format("Undefined variable '{}'.", name.lexeme).c_str()};
     }
 
-    lexer::Literal Environment::getAt(int dist, const std::string& name) {
-        return ancestor(dist)->values.at(name);
+    lexer::Literal Environment::getAt(int dist, size_t idx) {
+        return ancestor(dist)->locals.at(idx);
     }
 
     void Environment::assign(const lexer::Token& name,
@@ -52,8 +53,8 @@ namespace lox::environment {
             std::format("Undefined variable '{}'.", name.lexeme).c_str()};
     }
 
-    void Environment::assignAt(int dist, const lexer::Token& name,
+    void Environment::assignAt(int dist, size_t idx,
                                const lexer::Literal& value) {
-        ancestor(dist)->values.at(name.lexeme) = value;
+        ancestor(dist)->locals.at(idx) = value;
     }
 }

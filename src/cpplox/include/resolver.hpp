@@ -8,12 +8,20 @@
 #include "parser.hpp"
 
 namespace lox::resolver {
+    struct VarInfo {
+        lexer::Token tok;
+        bool defined{};
+        bool used{};
+        size_t idx{};
+    };
+
     using InterpreterRef =
         std::experimental::observer_ptr<interpreter::Interpreter>;
-    using Scope = std::unordered_map<std::string, bool>;
+    using Scope = std::unordered_map<std::string, VarInfo>;
     using Scopes = std::vector<Scope>;
 
     enum class FunctionType : uint8_t { NONE, FUNCTION };
+
 
     class Resolver {
        private:

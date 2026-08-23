@@ -23,13 +23,17 @@ namespace lox {
 
         static interpreter::Interpreter interpreter;
 
-        static void error(const lox::lexer::Token&, std::string_view);
+        static void warning(const lexer::Token&, std::string_view);
+
+        static void error(const lexer::Token&, std::string_view);
 
         static void error(size_t, std::string_view);
 
         static void runtimeError(const lox::error::RuntimeError& e);
 
         static void report(size_t, std::string_view, std::string_view);
+
+        static void warn(size_t, std::string_view, std::string_view);
 
         static void run(std::string_view, bool repl = false);
 
