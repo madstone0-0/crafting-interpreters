@@ -10,8 +10,8 @@
 #include <variant>
 #include <vector>
 
-#include "utils.hpp"
 #include "literal.hpp"
+#include "utils.hpp"
 
 namespace lox::lexer {
 
@@ -82,3 +82,11 @@ namespace lox::lexer {
 
     using Tokens = std::vector<Token>;
 }
+
+template <>
+struct std::formatter<lox::lexer::Token> : std::formatter<std::string> {
+    auto format(const lox::lexer::Token& tok, std::format_context& ctx) const {
+        return std::formatter<std::string>::format(
+            static_cast<std::string>(tok), ctx);
+    }
+};

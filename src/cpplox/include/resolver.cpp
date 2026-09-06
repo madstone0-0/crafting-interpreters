@@ -54,6 +54,43 @@ namespace lox::resolver {
         resolveFunction(s, FunctionType::FUNCTION);
     }
 
+    void Resolver::eval(const ast::Class& s) {
+        auto enclosingClass = currentClass;
+        currentClass = ClassType::CLASS;
+
+        declare(s.name);
+        define(s.name);
+
+        beginScope();
+        scopes.back().emplace("this", VarInfo{
+                                          .tok = lexer::Token{},
+                                          .defined = true,
+                                          .used = true,
+                                      });
+        for (const auto& meth : s.methods) {
+            auto& f = ast::parseMethod(meth);
+
+            auto decl = FunctionType::METHOD;
+            if (f.name.lexeme == "init") decl = FunctionType::INIT;
+            resolveFunction(f, decl);
+        }
+        endScope();
+
+        currentClass = enclosingClass;
+    }
+
+    void Resolver::eval(const ast::Return& s) {
+        if (currentFunction == FunctionType::NONE)
+            lox::Lox::error(s.keyword, "Can't return from top-level code.");
+
+        if (s.val) {
+            if (currentFunction == FunctionType::INIT)
+                lox::Lox::error(s.keyword,
+                                "Can't return a value from an initializer");
+            resolve(s.val);
+        }
+    }
+
     void Resolver::resolve(const ast::StmtPtr& s) {
         if (!s) return;
         std::visit(utils::overload{
@@ -77,14 +114,8 @@ namespace lox::resolver {
                        [this](const ast::Var& s) { eval(s); },
                        [this](const ast::Block& s) { eval(s); },
                        [this](const ast::Function& s) { eval(s); },
-                       [this](const ast::Return& s) {
-                           if (currentFunction == FunctionType::NONE)
-                               lox::Lox::error(
-                                   s.keyword,
-                                   "Can't return from top-level code.");
-
-                           if (s.val) resolve(s.val);
-                       },
+                       [this](const ast::Class& s) { eval(s); },
+                       [this](const ast::Return& s) { eval(s); },
                    },
                    *s);
     }
@@ -126,7 +157,15 @@ namespace lox::resolver {
         }
         resolve(e.body);
         endScope();
+
         currentFunction = enclosingFunction;
+    }
+
+    void Resolver::eval(const ast::Expr& self, const ast::This& e) {
+        if (currentClass == ClassType::NONE)
+            lox::Lox::error(e.keyword, "Can't use 'this' outside of a class");
+
+        resolveLocal(self, e.keyword);
     }
 
     void Resolver::resolveFunction(const ast::Function& f, FunctionType type) {
@@ -178,6 +217,12 @@ namespace lox::resolver {
                     resolve(e.right);
                 },
                 [this](const ast::Call& e) { eval(e); },
+                [this](const ast::Get& e) { resolve(e.obj); },
+                [this](const ast::Set& e) {
+                    resolve(e.val);
+                    resolve(e.obj);
+                },
+                [this, &self](const ast::This& e) { eval(self, e); },
                 [this](const ast::Lambda& e) { eval(e); },
                 [](const ast::Literal&) {},
             },

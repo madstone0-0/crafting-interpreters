@@ -90,6 +90,17 @@ namespace lox::ast {
                 [](const Call& e) {
                     return detail::parenthesize("call", e.callee, e.args);
                 },
+                [](const Get& e) {
+                    return detail::parenthesize(
+                        std::format("get {}", e.name.lexeme), e.obj);
+                },
+                [](const Set& e) {
+                    return detail::parenthesize(
+                        std::format("set {}", e.name.lexeme), e.obj, e.val);
+                },
+                [](const This& e) {
+                    return detail::parenthesize(e.keyword.lexeme);
+                },
                 [](const Lambda& e) {
                     return detail::parenthesize("lambda", e.params, e.body);
                 }},
@@ -152,6 +163,10 @@ namespace lox::ast {
                     return detail::parenthesize(s.name.lexeme, s.params,
                                                 s.body);
                 },
+                [](const Class& s) {
+                    return detail::parenthesize(
+                        std::format("class {}", s.name.lexeme));
+                },
             },
             *stmt);
     }
@@ -187,4 +202,13 @@ namespace lox::ast {
     //         *expr);
     // }
 
+    ast::Function& parseMethod(const StmtPtr& meth) {
+        if (auto* f = std::get_if<ast::Function>(meth.get())) {
+            return *f;
+        }
+
+        throw std::runtime_error{
+            "A non-function node was passed as a method. This should not be "
+            "possible!"};
+    }
 }

@@ -73,6 +73,7 @@ namespace lox::parser {
         using enum lexer::TokenType;
 
         try {
+            if (match(CLASS)) return classDecl();
             if (check(FUN) && checkNext(IDENTIFER)) {
                 advance();
                 return function("function");
@@ -84,6 +85,23 @@ namespace lox::parser {
             sync();
             return nullptr;
         }
+    }
+
+    ast::StmtPtr Parser::classDecl() {
+        using enum lexer::TokenType;
+        auto name = consume(IDENTIFER, "Expect class name.");
+        consume(LEFT_BRACE, "Expect '{' before class body.");
+
+        Methods meths;
+        while (!check(RIGHT_BRACE) && !isAtEnd())
+            meths.emplace_back(function("method"));
+
+        consume(RIGHT_BRACE, "Expect '}' after class body.");
+
+        return box(ast::Class{
+            .name = name,
+            .methods = std::move(meths),
+        });
     }
 
     ast::StmtPtr Parser::varDecl() {
@@ -331,6 +349,12 @@ namespace lox::parser {
                     .name = name,
                     .val = std::move(val),
                 });
+            } else if (auto* get = std::get_if<ast::Get>(&(*expr))) {
+                return box(ast::Set{
+                    .obj = std::move(get->obj),
+                    .name = get->name,
+                    .val = std::move(val),
+                });
             }
 
             error(equals, "Invalid assignment target.");
@@ -460,6 +484,13 @@ namespace lox::parser {
         while (true) {
             if (match(LEFT_PAREN)) {
                 expr = arguments(std::move(expr));
+            } else if (match(DOT)) {
+                auto name = consume(IDENTIFER,
+                                    "Expect property name after '.'.");
+                expr = box(ast::Get{
+                    .obj = std::move(expr),
+                    .name = name,
+                });
             } else {
                 break;
             }
@@ -478,6 +509,8 @@ namespace lox::parser {
         if (match(NUMBER, STRING)) return box(ast::Literal{prev().literal});
 
         if (match(IDENTIFER)) return box(ast::Variable{prev()});
+
+        if (match(THIS)) return box(ast::This{prev()});
 
         if (match(LEFT_PAREN)) {
             auto expr = expression();

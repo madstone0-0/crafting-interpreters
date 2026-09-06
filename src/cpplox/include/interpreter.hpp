@@ -69,12 +69,16 @@ namespace lox::interpreter {
 
         lexer::Literal lookupVar(const lexer::Token& tok, const ast::Expr& e);
 
+        lexer::CallableLiteral makeCallableLiteral(const ast::Function&,
+                                                   bool isInit = false);
+
         lexer::Literal eval(const ast::Print&);
         lexer::Literal eval(const ast::Var&);
         lexer::Literal eval(const ast::Block&, const environment::EnvPtr&);
         lexer::Literal eval(const ast::If&);
         lexer::Literal eval(const ast::While&);
         lexer::Literal eval(const ast::Function&);
+        lexer::Literal eval(const ast::Class&);
 
         lexer::Literal visit(const ast::StmtPtr&);
 
@@ -84,6 +88,8 @@ namespace lox::interpreter {
         lexer::Literal eval(const ast::Logical&);
         lexer::Literal eval(const ast::Call&);
         lexer::Literal eval(const ast::Lambda&);
+        lexer::Literal eval(const ast::Get&);
+        lexer::Literal eval(const ast::Set&);
 
         lexer::Literal visit(const ast::ExprPtr&);
 

@@ -32,6 +32,10 @@ namespace lox::environment {
             std::format("Undefined variable '{}'.", name.lexeme).c_str()};
     }
 
+    lexer::Literal Environment::getAt(int dist, const std::string& name) {
+        return ancestor(dist)->values.at(name);
+    }
+
     lexer::Literal Environment::getAt(int dist, size_t idx) {
         return ancestor(dist)->locals.at(idx);
     }

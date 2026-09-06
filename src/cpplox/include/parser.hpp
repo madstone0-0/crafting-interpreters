@@ -17,6 +17,7 @@ namespace lox::parser {
     using ast::box;
     using Statements = std::vector<ast::StmtPtr>;
     using Expressions = std::vector<ast::ExprPtr>;
+    using Methods = std::vector<ast::StmtPtr>;
 
     class Parser {
        private:
@@ -78,6 +79,8 @@ namespace lox::parser {
          * @brief declaration -> varDecl | statement ;
          */
         ast::StmtPtr declaration();
+
+        ast::StmtPtr classDecl();
 
         /**
          * @brief varDecl-> "var" IDENTIFIER ( "=" expression )? ";" ;
@@ -150,7 +153,8 @@ namespace lox::parser {
         ast::ExprPtr comma();
 
         /**
-         * @brief  assignment -> IDENTIFIER "=" assignment | ternary ;
+         * @brief assignment -> ( call "." )? IDENTIFIER "=" assignment |
+         * logic_or ;
          */
         ast::ExprPtr assignment();
 
@@ -200,7 +204,7 @@ namespace lox::parser {
         ast::ExprPtr arguments(ast::ExprPtr&&);
 
         /**
-         * @brief call -> primary ( "(" arguments? ")" )* ;
+         * @brief call -> primary ( "(" arguments? ")" | "." IDENTIFIER )* ;
          */
         ast::ExprPtr call();
 

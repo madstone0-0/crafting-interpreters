@@ -20,14 +20,16 @@ namespace lox::resolver {
     using Scope = std::unordered_map<std::string, VarInfo>;
     using Scopes = std::vector<Scope>;
 
-    enum class FunctionType : uint8_t { NONE, FUNCTION };
+    enum class FunctionType : uint8_t { NONE, FUNCTION, INIT, METHOD };
 
+    enum class ClassType : uint8_t { NONE, CLASS };
 
     class Resolver {
        private:
         InterpreterRef interp;
         Scopes scopes;
         FunctionType currentFunction = FunctionType::NONE;
+        ClassType currentClass = ClassType::NONE;
 
         void beginScope();
         void endScope();
@@ -38,6 +40,8 @@ namespace lox::resolver {
         void eval(const ast::Var&);
         void eval(const ast::Block&);
         void eval(const ast::Function&);
+        void eval(const ast::Class&);
+        void eval(const ast::Return&);
 
         void resolve(const ast::StmtPtr&);
 
@@ -45,6 +49,7 @@ namespace lox::resolver {
         void eval(const ast::Expr&, const ast::Assign&);
         void eval(const ast::Expr&, const ast::Variable&);
         void eval(const ast::Lambda&);
+        void eval(const ast::Expr&, const ast::This&);
 
         void resolveFunction(const ast::Function&, FunctionType);
         void resolveLocal(const ast::Expr&, const lexer::Token&);

@@ -8,6 +8,8 @@ namespace lox::interpreter {
                             [](const lexer::NumberLiteral&) { return true; },
                             [](const lexer::BoolLiteral& b) { return b; },
                             [](const lexer::CallableLiteral&) { return true; },
+                            [](const lexer::ClassLiteral&) { return true; },
+                            [](const lexer::InstanceLiteral&) { return true; },
                             [](std::monostate) { return false; }},
             l);
     }
@@ -86,15 +88,17 @@ namespace lox::interpreter {
         return std::monostate{};
     }
 
-    lexer::Literal Interpreter::eval(const ast::Function& s) {
-        auto f = lexer::CallableLiteral{
-            .name = std::format("<fn {}>", s.name.lexeme),
-            .arity_ = s.params.size(),
+    lexer::CallableLiteral Interpreter::makeCallableLiteral(
+        const ast::Function& f, bool isInit) {
+        return lexer::CallableLiteral{
+            .name = std::format("<fn {}>", f.name.lexeme),
+            .arity_ = f.params.size(),
             .closure = env,
-            .f = [this, &s](const environment::EnvPtr& env,
-                            const lexer::Literals& args) -> lexer::Literal {
-                for (size_t i{}; i < s.params.size(); ++i) {
-                    env->define(s.params.at(i).lexeme, args.at(i));
+            .f = [this, &f,
+                  isInit](const environment::EnvPtr& env,
+                          const lexer::Literals& args) -> lexer::Literal {
+                for (size_t i{}; i < f.params.size(); ++i) {
+                    env->define(f.params.at(i).lexeme, args.at(i));
                 }
 
                 auto prevEnv = this->env;
@@ -103,17 +107,39 @@ namespace lox::interpreter {
                 this->env = env;
 
                 try {
-                    for (const auto& block : s.body) {
+                    for (const auto& block : f.body) {
                         exec(block);
                     }
                 } catch (const error::Return& val) {
+                    if (isInit) return env->getAt(1, 0);
                     return val.val;
                 }
+                if (isInit) return env->getAt(1, 0);
                 return std::monostate{};
             },
+            .isInit = isInit,
         };
+    }
+
+    lexer::Literal Interpreter::eval(const ast::Function& s) {
+        auto f = makeCallableLiteral(s);
         env->define(s.name.lexeme, f);
 
+        return std::monostate{};
+    }
+
+    lexer::Literal Interpreter::eval(const ast::Class& s) {
+        env->define(s.name.lexeme, std::monostate{});
+
+        lexer::Methods meths;
+        for (const auto& meth : s.methods) {
+            auto& f = ast::parseMethod(meth);
+            auto callable = makeCallableLiteral(f, f.name.lexeme == "init");
+            meths.emplace(f.name.lexeme, std::move(callable));
+        }
+
+        auto c = std::make_shared<lexer::Class>(s.name.lexeme, meths);
+        env->assign(s.name, c);
         return std::monostate{};
     }
 
@@ -137,6 +163,7 @@ namespace lox::interpreter {
                         s, std::make_shared<environment::Environment>(env));
                 },
                 [this](const ast::Function& s) { return eval(s); },
+                [this](const ast::Class& s) { return eval(s); },
                 [this](const ast::Return& s) {
                     lexer::Literal val{std::monostate{}};
                     if (s.val) val = visit(s.val);
@@ -274,22 +301,39 @@ namespace lox::interpreter {
             args.emplace_back(visit(arg));
         }
 
-        if (!std::holds_alternative<lexer::CallableLiteral>(callee)) {
+        if (!std::holds_alternative<lexer::CallableLiteral>(callee) &&
+            !std::holds_alternative<lexer::ClassLiteral>(callee)) {
             throw error::RuntimeError{e.paren,
                                       "Can only call functions and classes"};
         }
 
-        auto f = std::get<lexer::CallableLiteral>(callee);
-        if (args.size() != f.arity()) {
-            throw error::RuntimeError{
-                e.paren, std::format("Expected {} arguments but got {}.",
-                                     f.arity(), args.size())
-                             .c_str()};
-        }
+        return std::visit(
+            utils::overload{
+                [&args, &e](const lexer::CallableLiteral& f) {
+                    if (args.size() != f.arity()) {
+                        throw error::RuntimeError{
+                            e.paren,
+                            std::format("Expected {} arguments but got {}.",
+                                        f.arity(), args.size())
+                                .c_str()};
+                    }
 
-        return f.call(std::make_shared<environment::Environment>(
-                          f.closure ? f.closure : env),
-                      args);
+                    return f.call(args);
+                },
+                [&args, &e](lexer::ClassLiteral& f) {
+                    if (args.size() != f->arity()) {
+                        throw error::RuntimeError{
+                            e.paren,
+                            std::format("Expected {} arguments but got {}.",
+                                        f->arity(), args.size())
+                                .c_str()};
+                    }
+
+                    return f->call(args);
+                },
+                [](const auto&) -> lexer::Literal { return std::monostate{}; },
+            },
+            callee);
     }
 
     lexer::Literal Interpreter::eval(const ast::Lambda& e) {
@@ -320,6 +364,28 @@ namespace lox::interpreter {
         };
     }
 
+    lexer::Literal Interpreter::eval(const ast::Get& e) {
+        auto obj = visit(e.obj);
+        if (!std::holds_alternative<lexer::InstanceLiteral>(obj))
+            throw error::RuntimeError{e.name,
+                                      "Only instances have properties"};
+
+        auto ins = std::get<lexer::InstanceLiteral>(obj);
+        return ins->access(e.name);
+    }
+
+    lexer::Literal Interpreter::eval(const ast::Set& e) {
+        auto obj = visit(e.obj);
+
+        if (!std::holds_alternative<lexer::InstanceLiteral>(obj))
+            throw error::RuntimeError{e.name, "Only instances have fields."};
+
+        auto ins = std::get<lexer::InstanceLiteral>(obj);
+        auto val = visit(e.val);
+        ins->set(e.name, val);
+        return val;
+    }
+
     lexer::Literal Interpreter::visit(const ast::ExprPtr& expr) {
         // if (!expr) return std::monostate{}; // Maybe... we'll see
         const auto& self = *expr;
@@ -347,6 +413,11 @@ namespace lox::interpreter {
                 [this](const ast::Logical& e) { return eval(e); },
                 [this](const ast::Call& e) { return eval(e); },
                 [this](const ast::Lambda& e) { return eval(e); },
+                [this](const ast::Get& e) { return eval(e); },
+                [this](const ast::Set& e) { return eval(e); },
+                [this, &self](const ast::This& e) {
+                    return lookupVar(e.keyword, self);
+                },
                 [](const ast::Literal& e) { return e.val; },
             },
             *expr);
@@ -367,6 +438,7 @@ namespace lox::interpreter {
             lexer::CallableLiteral{
                 .name = "<native fn>",
                 .arity_ = 0,
+                .closure = nullptr,
                 .f =
                     [](const environment::EnvPtr&, const lexer::Literals&) {
                         // Time in seconds since epoch
@@ -385,6 +457,7 @@ namespace lox::interpreter {
             lexer::CallableLiteral{
                 .name = "<native fn>",
                 .arity_ = 0,
+                .closure = nullptr,
                 .f =
                     [](const environment::EnvPtr&, const lexer::Literals&) {
                         std::string input;
@@ -397,6 +470,7 @@ namespace lox::interpreter {
             lexer::CallableLiteral{
                 .name = "<native fn>",
                 .arity_ = 1,
+                .closure = nullptr,
                 .f = [](const environment::EnvPtr&,
                         const lexer::Literals& args) -> lexer::Literal {
                     auto arg = args.at(0);
@@ -430,6 +504,7 @@ namespace lox::interpreter {
             lexer::CallableLiteral{
                 .name = "<native fn>",
                 .arity_ = 1,
+                .closure = nullptr,
                 .f = [](const environment::EnvPtr&,
                         const lexer::Literals& args) -> lexer::Literal {
                     auto arg = args.at(0);
@@ -441,6 +516,7 @@ namespace lox::interpreter {
             lexer::CallableLiteral{
                 .name = "<native fn>",
                 .arity_ = 1,
+                .closure = nullptr,
                 .f = [this](const environment::EnvPtr&,
                             const lexer::Literals& args) -> lexer::Literal {
                     return isTruthy(args.at(0));

@@ -92,7 +92,8 @@ namespace lox {
         if (hadError) return;
 
 #ifdef DEBUG
-        for (const auto& tok : tokens) std::println("{}", std::string{tok});
+        for (const auto& tok : tokens) std::println("{}", tok);
+        std::println();
 #endif
         interpreter.interpret(std::move(stmts), repl);
     }

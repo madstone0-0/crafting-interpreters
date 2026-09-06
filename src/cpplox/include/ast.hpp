@@ -61,13 +61,29 @@ namespace lox::ast {
         std::vector<ExprPtr> args;
     };
 
+    struct Get {
+        ExprPtr obj;
+        lox::lexer::Token name;
+    };
+
+    struct Set {
+        ExprPtr obj;
+        lox::lexer::Token name;
+        ExprPtr val;
+    };
+
+    struct This {
+        lox::lexer::Token keyword;
+    };
+
     struct Lambda {
         std::vector<lox::lexer::Token> params;
         std::vector<StmtPtr> body;
     };
 
-    using ExprVariant = std::variant<Assign, Binary, Unary, Ternary, Grouping,
-                                     Literal, Variable, Logical, Call, Lambda>;
+    using ExprVariant =
+        std::variant<Assign, Binary, Unary, Ternary, Grouping, Literal,
+                     Variable, Logical, Call, Get, Set, This, Lambda>;
     struct Expr : ExprVariant {
         using ExprVariant::ExprVariant;
     };
@@ -88,6 +104,11 @@ namespace lox::ast {
         lox::lexer::Token name;
         std::vector<lox::lexer::Token> params;
         std::vector<StmtPtr> body;
+    };
+
+    struct Class {
+        lox::lexer::Token name;
+        std::vector<StmtPtr> methods;
     };
 
     struct If {
@@ -125,8 +146,8 @@ namespace lox::ast {
         ExprPtr val;
     };
 
-    using StmtVariant = std::variant<Block, Expression, Function, If, While,
-                                     For, Print, Var, Break, Return>;
+    using StmtVariant = std::variant<Block, Expression, Function, Class, If,
+                                     While, For, Print, Var, Break, Return>;
     struct Stmt : StmtVariant {
         using StmtVariant::StmtVariant;
     };

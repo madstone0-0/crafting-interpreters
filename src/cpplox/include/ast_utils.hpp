@@ -19,7 +19,9 @@ namespace lox::ast {
         [](const lexer::BoolLiteral& e) {
             return std::string{e ? "true" : "false"};
         },
-        [](const lexer::Callable& e) { return e.name; },
+        [](const lexer::CallableLiteral& e) { return e.name; },
+        [](const lexer::ClassLiteral& e) { return e->name(); },
+        [](const lexer::InstanceLiteral& e) { return e->name(); },
         [](std::monostate) { return std::string{"nil"}; }};
 
     std::string astPrinter(const lexer::Tokens&, int = 0);
@@ -50,7 +52,8 @@ namespace lox::ast {
         template <class... Things>
         std::string parenthesize(const std::string& name,
                                  const Things&... things) {
-            std::string out = "(" + name + ' ';
+            constexpr size_t n = sizeof...(things);
+            std::string out = "(" + name + (n > 0 ? " " : "");
             bool first = true;
 
             (
@@ -71,6 +74,8 @@ namespace lox::ast {
         }
 
     }
+
+    ast::Function& parseMethod(const StmtPtr&);
 
     // std::string rpnAstPrinter(const ExprPtr&);
 }

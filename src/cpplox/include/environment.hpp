@@ -31,7 +31,7 @@ namespace lox::environment {
 
         lexer::Literal get(const lexer::Token&);
 
-        // lexer::Literal getAt(int, const std::string&);
+        lexer::Literal getAt(int, const std::string&);
         lexer::Literal getAt(int, size_t);
 
         void assign(const lexer::Token&, const lexer::Literal&);
