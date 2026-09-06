@@ -114,7 +114,7 @@ if __name__ == "__main__":
                     "Block : std::vector<StmtPtr> stmts",
                     "Expression : ExprPtr expr",
                     "Function : lox::lexer::Token name, std::vector<lox::lexer::Token> params, std::vector<StmtPtr> body",
-                    "Class : lox::lexer::Token name, std::vector<StmtPtr> methods",
+                    "Class : lox::lexer::Token name, std::vector<StmtPtr> methods, std::vector<StmtPtr> getters",
                     "If : ExprPtr condition, Stmt thenBr, Stmt elseBr",
                     "While : ExprPtr condition, Stmt body",
                     "For : Stmt init, ExprPtr condition, ExprPtr inc",

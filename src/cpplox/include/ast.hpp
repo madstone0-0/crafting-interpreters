@@ -109,6 +109,7 @@ namespace lox::ast {
     struct Class {
         lox::lexer::Token name;
         std::vector<StmtPtr> methods;
+        std::vector<StmtPtr> getters;
     };
 
     struct If {

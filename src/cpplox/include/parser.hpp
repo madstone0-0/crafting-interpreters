@@ -18,6 +18,7 @@ namespace lox::parser {
     using Statements = std::vector<ast::StmtPtr>;
     using Expressions = std::vector<ast::ExprPtr>;
     using Methods = std::vector<ast::StmtPtr>;
+    using Getters = std::vector<ast::StmtPtr>;
 
     class Parser {
        private:
@@ -80,6 +81,10 @@ namespace lox::parser {
          */
         ast::StmtPtr declaration();
 
+        /**
+         * @brief classDecl -> "class" IDENTIFIER "{" (function | getter)* "}"
+         * ;
+         */
         ast::StmtPtr classDecl();
 
         /**
@@ -94,6 +99,11 @@ namespace lox::parser {
          * @brief function -> IDENTIFIER "(" parameters? ")" block ;
          */
         ast::StmtPtr function(std::string_view kind);
+
+        /**
+         * @brief getter -> IDENTIFIER block ;
+         */
+        ast::StmtPtr getter();
 
         /**
          * @brief statement -> exprStmt | printStmt;

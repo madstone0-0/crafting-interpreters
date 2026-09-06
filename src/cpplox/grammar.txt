@@ -2,13 +2,13 @@ program -> declaration* EOF ;
 
 declaration -> funDec | varDecl | classDecl | statement ;
 
-
-classDecl -> "class" IDENTIFIER "{" function* "}" ;
+classDecl -> "class" IDENTIFIER "{" (function | getter)* "}" ;
 
 varDecl -> "var" IDENTIFIER ( "=" expression )? ";" ;
 funDec -> "fun" function ;
 parameters -> IDENTIFIER ( "," IDENTIFIER )* ;
 function -> IDENTIFIER "(" parameters? ")" block ;
+getter -> IDENTIFIER block ;
 
 statement -> exprStmt | printStmt | ifStmt | whileStmt | forStmt | breakStmt | returnStmt | block;
 breakStmt -> "break" ";" ;

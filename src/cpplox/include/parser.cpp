@@ -93,14 +93,20 @@ namespace lox::parser {
         consume(LEFT_BRACE, "Expect '{' before class body.");
 
         Methods meths;
-        while (!check(RIGHT_BRACE) && !isAtEnd())
-            meths.emplace_back(function("method"));
+        Getters gets;
+        while (!check(RIGHT_BRACE) && !isAtEnd()) {
+            if (peekNext().type == LEFT_PAREN)
+                meths.emplace_back(function("method"));
+            else
+                gets.emplace_back(getter());
+        }
 
         consume(RIGHT_BRACE, "Expect '}' after class body.");
 
         return box(ast::Class{
             .name = name,
             .methods = std::move(meths),
+            .getters = std::move(gets),
         });
     }
 
@@ -138,7 +144,7 @@ namespace lox::parser {
         consume(RIGHT_PAREN, "Expect ')' after parameters");
 
         consume(LEFT_BRACE, std::format("Expect '{{' before {} body.", kind));
-        Statements body = block();
+        auto body = block();
 
         return {
             std::move(params),
@@ -151,6 +157,21 @@ namespace lox::parser {
 
         auto name = consume(IDENTIFER, std::format("Expect {} name", kind));
         auto [params, body] = functionBody(kind);
+        return box(ast::Function{
+            .name = name,
+            .params = std::move(params),
+            .body = std::move(body),
+        });
+    }
+
+    ast::StmtPtr Parser::getter() {
+        using enum lexer::TokenType;
+
+        lexer::Tokens params;
+        auto name = consume(IDENTIFER, "Expect getter name");
+        consume(LEFT_BRACE, "Expect '{' after getter name");
+        auto body = block();
+
         return box(ast::Function{
             .name = name,
             .params = std::move(params),

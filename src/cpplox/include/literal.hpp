@@ -53,14 +53,17 @@ namespace lox::lexer {
     };
 
     using Methods = std::unordered_map<std::string, lexer::CallableLiteral>;
+    using Getters = std::unordered_map<std::string, lexer::CallableLiteral>;
 
     struct Class : public std::enable_shared_from_this<Class> {
         std::string name_;
         Methods methods;
+        Getters getters;
 
-        Class(std::string_view name, Methods methods)
+        Class(std::string_view name, Methods methods, Getters getters)
         : name_{name}
-        , methods{std::move(methods)} {}
+        , methods{std::move(methods)}
+        , getters{std::move(getters)} {}
 
         // TODO: come back to this
         bool operator==(const Class& other) const {
@@ -70,6 +73,9 @@ namespace lox::lexer {
         lexer::Literal call(const Literals&) const;
 
         std::optional<lexer::CallableLiteral> findMethod(
+            const std::string&) const;
+
+        std::optional<lexer::CallableLiteral> findGetter(
             const std::string&) const;
 
         size_t arity() const;

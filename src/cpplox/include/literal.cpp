@@ -41,9 +41,18 @@ namespace lox::lexer {
         return methods.at(name);
     }
 
+    std::optional<lexer::CallableLiteral> Class::findGetter(
+        const std::string& name) const {
+        if (!getters.contains(name)) return {};
+        return getters.at(name);
+    }
+
     lexer::Literal Instance::access(const lexer::Token& name) {
-        // NOTE: Fields shadow methods
+        // NOTE: Fields and getters shadow methods
         if (fields.contains(name.lexeme)) return fields.at(name.lexeme);
+        auto getter = c->findGetter(name.lexeme);
+        if (getter.has_value())
+            return getter->bind(shared_from_this()).call({});
 
         auto method = c->findMethod(name.lexeme);
         if (method.has_value()) return method->bind(shared_from_this());

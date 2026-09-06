@@ -74,6 +74,11 @@ namespace lox::resolver {
             if (f.name.lexeme == "init") decl = FunctionType::INIT;
             resolveFunction(f, decl);
         }
+        for (const auto& get : s.getters) {
+            auto& f = ast::parseMethod(get);
+
+            resolveFunction(f, FunctionType::METHOD);
+        }
         endScope();
 
         currentClass = enclosingClass;

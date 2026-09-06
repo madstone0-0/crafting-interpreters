@@ -132,13 +132,19 @@ namespace lox::interpreter {
         env->define(s.name.lexeme, std::monostate{});
 
         lexer::Methods meths;
+        lexer::Getters gets;
         for (const auto& meth : s.methods) {
             auto& f = ast::parseMethod(meth);
             auto callable = makeCallableLiteral(f, f.name.lexeme == "init");
             meths.emplace(f.name.lexeme, std::move(callable));
         }
+        for (const auto& get : s.getters) {
+            auto& f = ast::parseMethod(get);
+            auto callable = makeCallableLiteral(f, false);
+            gets.emplace(f.name.lexeme, std::move(callable));
+        }
 
-        auto c = std::make_shared<lexer::Class>(s.name.lexeme, meths);
+        auto c = std::make_shared<lexer::Class>(s.name.lexeme, meths, gets);
         env->assign(s.name, c);
         return std::monostate{};
     }
