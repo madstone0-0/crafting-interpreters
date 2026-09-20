@@ -61,6 +61,25 @@ namespace lox::resolver {
         declare(s.name);
         define(s.name);
 
+        if (s.superclass) {
+            if (auto& super = ast::parseSuper(s.superclass);
+                s.name.lexeme == super.name.lexeme)
+                lox::Lox::error(super.name,
+                                "A class can't inherit from itself");
+
+            currentClass = ClassType::SUBCLASS;
+            resolve(s.superclass);
+        }
+
+        if (s.superclass) {
+            beginScope();
+            scopes.back().emplace("super", VarInfo{
+                                               .tok = lexer::Token{},
+                                               .defined = true,
+                                               .used = true,
+                                           });
+        }
+
         beginScope();
         scopes.back().emplace("this", VarInfo{
                                           .tok = lexer::Token{},
@@ -80,6 +99,7 @@ namespace lox::resolver {
             resolveFunction(f, FunctionType::METHOD);
         }
         endScope();
+        if (s.superclass) endScope();
 
         currentClass = enclosingClass;
     }
@@ -220,6 +240,17 @@ namespace lox::resolver {
                 [this](const ast::Logical& e) {
                     resolve(e.left);
                     resolve(e.right);
+                },
+                [this, &self](const ast::Super& e) {
+                    if (currentClass == ClassType::NONE) {
+                        lox::Lox::error(
+                            e.keyword, "Can't use 'super' outside of a class");
+                    } else if (currentClass != ClassType::SUBCLASS) {
+                        lox::Lox::error(
+                            e.keyword,
+                            "Can't use 'super' in a class with no superclass");
+                    }
+                    resolveLocal(self, e.keyword);
                 },
                 [this](const ast::Call& e) { eval(e); },
                 [this](const ast::Get& e) { resolve(e.obj); },

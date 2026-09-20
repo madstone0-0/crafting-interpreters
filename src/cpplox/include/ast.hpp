@@ -72,6 +72,11 @@ namespace lox::ast {
         ExprPtr val;
     };
 
+    struct Super {
+        lox::lexer::Token keyword;
+        lox::lexer::Token method;
+    };
+
     struct This {
         lox::lexer::Token keyword;
     };
@@ -83,7 +88,7 @@ namespace lox::ast {
 
     using ExprVariant =
         std::variant<Assign, Binary, Unary, Ternary, Grouping, Literal,
-                     Variable, Logical, Call, Get, Set, This, Lambda>;
+                     Variable, Logical, Call, Get, Set, Super, This, Lambda>;
     struct Expr : ExprVariant {
         using ExprVariant::ExprVariant;
     };
@@ -108,6 +113,7 @@ namespace lox::ast {
 
     struct Class {
         lox::lexer::Token name;
+        ExprPtr superclass;
         std::vector<StmtPtr> methods;
         std::vector<StmtPtr> getters;
     };

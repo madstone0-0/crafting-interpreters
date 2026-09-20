@@ -57,11 +57,14 @@ namespace lox::lexer {
 
     struct Class : public std::enable_shared_from_this<Class> {
         std::string name_;
+        lexer::ClassLiteral superclass;
         Methods methods;
         Getters getters;
 
-        Class(std::string_view name, Methods methods, Getters getters)
+        Class(std::string_view name, lexer::ClassLiteral superclass,
+              Methods methods, Getters getters)
         : name_{name}
+        , superclass{std::move(superclass)}
         , methods{std::move(methods)}
         , getters{std::move(getters)} {}
 

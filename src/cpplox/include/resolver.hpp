@@ -22,7 +22,7 @@ namespace lox::resolver {
 
     enum class FunctionType : uint8_t { NONE, FUNCTION, INIT, METHOD };
 
-    enum class ClassType : uint8_t { NONE, CLASS };
+    enum class ClassType : uint8_t { NONE, CLASS, SUBCLASS };
 
     class Resolver {
        private:

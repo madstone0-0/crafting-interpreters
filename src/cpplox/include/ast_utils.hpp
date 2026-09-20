@@ -77,5 +77,7 @@ namespace lox::ast {
 
     ast::Function& parseMethod(const StmtPtr&);
 
+    ast::Variable& parseSuper(const ExprPtr&);
+
     // std::string rpnAstPrinter(const ExprPtr&);
 }

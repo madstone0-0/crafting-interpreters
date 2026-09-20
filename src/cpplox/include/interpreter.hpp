@@ -90,6 +90,7 @@ namespace lox::interpreter {
         lexer::Literal eval(const ast::Lambda&);
         lexer::Literal eval(const ast::Get&);
         lexer::Literal eval(const ast::Set&);
+        lexer::Literal eval(const ast::Super&, const ast::Expr&);
 
         lexer::Literal visit(const ast::ExprPtr&);
 

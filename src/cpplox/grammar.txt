@@ -2,7 +2,7 @@ program -> declaration* EOF ;
 
 declaration -> funDec | varDecl | classDecl | statement ;
 
-classDecl -> "class" IDENTIFIER "{" (function | getter)* "}" ;
+classDecl -> "class" IDENTIFIER ( "<" IDENTIFIER )? "{" (function | getter)* "}" ;
 
 varDecl -> "var" IDENTIFIER ( "=" expression )? ";" ;
 funDec -> "fun" function ;
@@ -34,5 +34,5 @@ factor -> unary ( ( "/" | "*" ) unary )* ;
 unary -> ("!" | "-") unary | call ;
 arguments -> expression ( "," expression )* ;
 call -> primary ( "(" arguments? ")" | "." IDENTIFIER )* ;
-primary -> STRING | NUMBER | "true" | "false" | "nil" | "(" expression ")" | IDENTIFIER | lambda ;
+primary -> STRING | NUMBER | "true" | "false" | "nil" | "(" expression ")" | IDENTIFIER | lambda | "super" "." IDENTIFIER ;
 lambda -> "fun" "(" parameters? ")" block;

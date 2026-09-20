@@ -37,8 +37,10 @@ namespace lox::lexer {
 
     std::optional<lexer::CallableLiteral> Class::findMethod(
         const std::string& name) const {
-        if (!methods.contains(name)) return {};
-        return methods.at(name);
+        if (methods.contains(name)) return methods.at(name);
+        if (superclass) return superclass->findMethod(name);
+
+        return {};
     }
 
     std::optional<lexer::CallableLiteral> Class::findGetter(

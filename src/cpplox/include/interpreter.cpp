@@ -129,10 +129,23 @@ namespace lox::interpreter {
     }
 
     lexer::Literal Interpreter::eval(const ast::Class& s) {
+        lexer::Literal super{lexer::ClassLiteral{}};
+        if (s.superclass) {
+            super = visit(s.superclass);
+            if (!std::holds_alternative<lexer::ClassLiteral>(super))
+                throw std::runtime_error{"Superclass must be a class"};
+        }
+
         env->define(s.name.lexeme, std::monostate{});
+
+        if (s.superclass) {
+            env = std::make_shared<environment::Environment>(env);
+            env->define("super", super);
+        }
 
         lexer::Methods meths;
         lexer::Getters gets;
+
         for (const auto& meth : s.methods) {
             auto& f = ast::parseMethod(meth);
             auto callable = makeCallableLiteral(f, f.name.lexeme == "init");
@@ -144,7 +157,13 @@ namespace lox::interpreter {
             gets.emplace(f.name.lexeme, std::move(callable));
         }
 
-        auto c = std::make_shared<lexer::Class>(s.name.lexeme, meths, gets);
+        auto c = std::make_shared<lexer::Class>(
+            s.name.lexeme, std::get<lexer::ClassLiteral>(super), meths, gets);
+
+        if (!std::holds_alternative<std::monostate>(super) &&
+            !env->enclosing.expired())
+            env = env->enclosing.lock();
+
         env->assign(s.name, c);
         return std::monostate{};
     }
@@ -392,6 +411,34 @@ namespace lox::interpreter {
         return val;
     }
 
+    lexer::Literal Interpreter::eval(const ast::Super& e,
+                                     const ast::Expr& self) {
+        const auto& [dist, idx] = locals.at(&self);
+        auto superValue = env->getAt(dist, "super");
+        auto objValue = env->getAt(dist - 1, "this");
+
+        if (!std::holds_alternative<lexer::ClassLiteral>(superValue))
+            throw std::runtime_error{
+                "Super value is not of type ClassLiteral!"};
+
+        if (!std::holds_alternative<lexer::InstanceLiteral>(objValue))
+            throw std::runtime_error{
+                "This value is not of type InstanceLiteral!"};
+
+        auto super = std::get<lexer::ClassLiteral>(superValue);
+        auto obj = std::get<lexer::InstanceLiteral>(objValue);
+
+        auto meth = super->findMethod(e.method.lexeme);
+        if (!meth.has_value()) {
+            throw error::RuntimeError{e.method,
+                                      std::format("Undefined property '{}'.",
+                                                  e.method.lexeme)
+                                          .c_str()};
+        }
+
+        return meth.value().bind(obj);
+    }
+
     lexer::Literal Interpreter::visit(const ast::ExprPtr& expr) {
         // if (!expr) return std::monostate{}; // Maybe... we'll see
         const auto& self = *expr;
@@ -424,6 +471,7 @@ namespace lox::interpreter {
                 [this, &self](const ast::This& e) {
                     return lookupVar(e.keyword, self);
                 },
+                [this, &self](const ast::Super& e) { return eval(e, self); },
                 [](const ast::Literal& e) { return e.val; },
             },
             *expr);

@@ -82,7 +82,8 @@ namespace lox::parser {
         ast::StmtPtr declaration();
 
         /**
-         * @brief classDecl -> "class" IDENTIFIER "{" (function | getter)* "}"
+         * @brief classDecl -> "class" IDENTIFIER ( "<" IDENTIFIER )? "{"
+         * (function | getter)* "}" ;
          * ;
          */
         ast::StmtPtr classDecl();
@@ -220,7 +221,7 @@ namespace lox::parser {
 
         /**
          * @brief primary -> STRING | NUMBER | "true" | "false" | "nil" | "("
-         * expression ")" | IDENTIFIER | lambda ;
+         * expression ")" | IDENTIFIER | lambda | "super" "." IDENTIFIER ;
          */
         ast::ExprPtr primary();
 

@@ -101,6 +101,9 @@ namespace lox::ast {
                 [](const This& e) {
                     return detail::parenthesize(e.keyword.lexeme);
                 },
+                [](const Super& e) {
+                    return detail::parenthesize(e.keyword.lexeme);
+                },
                 [](const Lambda& e) {
                     return detail::parenthesize("lambda", e.params, e.body);
                 }},
@@ -203,12 +206,19 @@ namespace lox::ast {
     // }
 
     ast::Function& parseMethod(const StmtPtr& meth) {
-        if (auto* f = std::get_if<ast::Function>(meth.get())) {
-            return *f;
-        }
+        if (auto* f = std::get_if<ast::Function>(meth.get())) return *f;
 
         throw std::runtime_error{
             "A non-function node was passed as a method. This should not be "
+            "possible!"};
+    }
+
+    ast::Variable& parseSuper(const ExprPtr& super) {
+        if (auto* s = std::get_if<ast::Variable>(super.get())) return *s;
+
+        throw std::runtime_error{
+            "A non-variable node was passed as a superclass. This should not "
+            "be "
             "possible!"};
     }
 }

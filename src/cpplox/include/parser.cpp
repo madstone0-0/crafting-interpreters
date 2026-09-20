@@ -90,6 +90,15 @@ namespace lox::parser {
     ast::StmtPtr Parser::classDecl() {
         using enum lexer::TokenType;
         auto name = consume(IDENTIFER, "Expect class name.");
+
+        ast::ExprPtr super;
+        if (match(LESS)) {
+            consume(IDENTIFER, "Expect superclass name");
+            super = box(ast::Variable{
+                .name = prev(),
+            });
+        }
+
         consume(LEFT_BRACE, "Expect '{' before class body.");
 
         Methods meths;
@@ -105,6 +114,7 @@ namespace lox::parser {
 
         return box(ast::Class{
             .name = name,
+            .superclass = std::move(super),
             .methods = std::move(meths),
             .getters = std::move(gets),
         });
@@ -530,6 +540,16 @@ namespace lox::parser {
         if (match(NUMBER, STRING)) return box(ast::Literal{prev().literal});
 
         if (match(IDENTIFER)) return box(ast::Variable{prev()});
+
+        if (match(SUPER)) {
+            auto kw = prev();
+            consume(DOT, "Expect '.' after 'super'.");
+            auto meth = consume(IDENTIFER, "Expect superclass method name.");
+            return box(ast::Super{
+                .keyword = kw,
+                .method = meth,
+            });
+        }
 
         if (match(THIS)) return box(ast::This{prev()});
 
