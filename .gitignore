@@ -42,3 +42,6 @@ perf.*
 
 # book files
 craftinginterpreters
+
+# Rust
+target/
